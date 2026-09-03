@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CEO Simulator v7.0 - Database Cloud</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 12px; padding-bottom: 50px; }
+        .container { max-width: 900px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 12px; }
+        header h1 { font-size: 1.3rem; color: var(--primary); }
+
+        /* Auth Screen Styling */
+        #auth-screen { max-width: 400px; margin: 40px auto; }
+        .auth-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .auth-card h2 { margin-bottom: 16px; font-size: 1.2rem; text-align: center; }
+
+        /* Main Game Layout */
+        #game-screen { display: none; }
+        
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; margin-bottom: 12px; }
+        .metric-card { background: var(--card); padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
+        .metric-title { font-size: 0.65rem; color: #64748b; font-weight: bold; text-transform: uppercase; }
+        .metric-value { font-size: 0.85rem; font-weight: bold; margin-top: 2px; }
+
+        .card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
+        .card-title { font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px; color: var(--accent); }
+
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 2px; }
+        .form-control { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+
+        .btn-main { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .btn-main:disabled { background: #94a3b8; }
+        .btn-danger { background: var(--danger); }
+        .btn-sec { background: #475569; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.75rem; }
+
+        .console { background: #0f172a; color: #38bdf8; font-family: monospace; padding: 10px; border-radius: 6px; font-size: 0.7rem; height: 140px; overflow-y: auto; line-height: 1.3; }
+        .user-bar { display: flex; justify-content: space-between; align-items: center; background: #e2e8f0; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- SCREEN 1: LOGIN & REGISTER -->
+    <div id="auth-screen">
+        <header>
+            <h1>CEO Simulator Enterprise</h1>
+            <p style="font-size: 0.8rem; color: #64748b;">Login untuk melanjutkan progress bisnis kamu</p>
+        </header>
+        <div class="auth-card">
+            <h2>Akun Direksi</h2>
+            <div class="form-group">
+                <label>Email Perusahaan:</label>
+                <input type="email" id="auth-email" class="form-control" placeholder="ceo@company.com">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="auth-password" class="form-control" placeholder="******">
+            </div>
+            <button class="btn-main" onclick="handleLogin()">Masuk (Login)</button>
+            <button class="btn-main btn-sec" style="margin-top: 8px;" onclick="handleRegister()">Daftar Akun Baru</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: GAMEPLAY DASHBOARD -->
+    <div id="game-screen">
+        <div class="user-bar">
+            <span>Selamat datang, <b id="user-display">CEO</b></span>
+            <button class="btn-sec btn-danger" onclick="handleLogout()">Logout</button>
+        </div>
+
+        <!-- Metrics Top Bar -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Periode</div>
+                <div class="metric-value" id="m-month">Bulan 1 / 60</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Kas Perusahaan</div>
+                <div class="metric-value" style="color:var(--success)" id="m-cash">500 JT</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Rating Kredit</div>
+                <div class="metric-value" id="m-rating" style="color:var(--accent)">A</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Status Database</div>
+                <div class="metric-value" style="color:var(--success)" id="m-db">Tersimpan</div>
+            </div>
+        </div>
+
+        <!-- Gameplay Controls -->
+        <div class="card">
+            <div class="card-title">1. Operasional Bulanan</div>
+            <div class="form-group">
+                <label>Target Produksi (Unit):</label>
+                <input type="number" id="in-prod" class="form-control" value="1000">
+            </div>
+            <div class="form-group">
+                <label>Harga Jual Domestik (Rp):</label>
+                <input type="number" id="in-price" class="form-control" value="120000">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">2. Keuangan & Fasilitas Bank</div>
+            <p style="font-size:0.75rem; margin-bottom:8px;">Sisa Utang: <b id="lbl-debt">Rp 0</b></p>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-sec" style="background:var(--danger)" onclick="takeLoan()">Pinjam Rp 100 JT</button>
+                <button class="btn-sec" style="background:var(--success)" onclick="payLoan()">Bayar Utang Rp 100 JT</button>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <button id="btn-next" class="btn-main" onclick="processTurn()">Jalankan Bulan Ini & Auto-Save</button>
+
+        <!-- Console Log -->
+        <div class="card" style="margin-top:12px;">
+            <div class="card-title">Aktivitas & Log Sistem Cloud</div>
+            <div class="console" id="log-box">
+                > Mengintegrasikan Database Cloud Firebase...<br>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- FIREBASE SDK (MODULAR v9+) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+        getAuth, 
+        createUserWithEmailAndPassword, 
+        signInWithEmailAndPassword, 
+        signOut, 
+        onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+        getFirestore, 
+        doc, 
+        setDoc, 
+        getDoc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // // // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAKefpsRSn9OQ32W1wu5J3MbOyw6maNJvI",
+  authDomain: "gamer-1a8ed.firebaseapp.com",
+  projectId: "gamer-1a8ed",
+  storageBucket: "gamer-1a8ed.firebasestorage.app",
+  messagingSenderId: "780241113004",
+  appId: "1:780241113004:web:0a942d2a1f1e214c85b409",
+  measurementId: "G-G0N0C8N9MS"
+};
+};
+
+    // Initialize Firebase
+    const app = initializeApp(gamer-1a8ed.firebaseapp.com);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+
+    // Game Default State
+    window.state = {
+        month: 1,
+        cash: 500000000,
+        initialCash: 500000000,
+        debtBank: 0,
+        creditRating: 'A'
+    };
+
+    // -------------------------------------------------------------
+    // AUTHENTICATION FUNCTIONS
+    // -------------------------------------------------------------
+    window.handleRegister = async function() {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-password').value;
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+            alert("Akun berhasil dibuat! Otomatis login.");
+            await saveGameData(userCredential.user.uid);
+        } catch (error) {
+            alert("Gagal Registrasi: " + error.message);
+        }
+    };
+
+    window.handleLogin = async function() {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-password').value;
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (error) {
+            alert("Gagal Login: " + error.message);
+        }
+    };
+
+    window.handleLogout = function() {
+        signOut(auth).then(() => {
+            document.getElementById('auth-screen').style.display = 'block';
+            document.getElementById('game-screen').style.display = 'none';
+        });
+    };
+
+    // Auth Listener
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('user-display').innerText = user.email;
+            
+            // Load Data dari Firestore
+            await loadGameData(user.uid);
+            updateUI();
+        }
+    });
+
+    // -------------------------------------------------------------
+    // DATABASE CLOUD FUNCTIONS (FIRESTORE)
+    // -------------------------------------------------------------
+    async function saveGameData(uid) {
+        document.getElementById('m-db').innerText = "Menyimpan...";
+        document.getElementById('m-db').style.color = "var(--danger)";
+        try {
+            await setDoc(doc(db, "users", uid), {
+                state: window.state,
+                updatedAt: new Date()
+            });
+            document.getElementById('m-db').innerText = "Tersimpan";
+            document.getElementById('m-db').style.color = "var(--success)";
+        } catch (e) {
+            console.error("Error saving document: ", e);
+            document.getElementById('m-db').innerText = "Gagal Simpan";
+        }
+    }
+
+    async function loadGameData(uid) {
+        log("Mengunduh progress game dari server...");
+        const docRef = doc(db, "users", uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            window.state = docSnap.data().state;
+            log("Progress berhasil dimuat dari database cloud!");
+        } else {
+            log("Pengguna baru terdeteksi. Membuat save-game awal.");
+            await saveGameData(uid);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // GAMEPLAY LOGIC
+    // -------------------------------------------------------------
+    function formatIDR(val) {
+        return "Rp " + Math.floor(val).toLocaleString('id-ID');
+    }
+
+    function log(msg) {
+        const box = document.getElementById('log-box');
+        box.innerHTML += `> ${msg}<br>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    window.updateUI = function() {
+        document.getElementById('m-month').innerText = `Bln ${window.state.month} / 60`;
+        document.getElementById('m-cash').innerText = formatIDR(window.state.cash);
+        document.getElementById('m-rating').innerText = window.state.creditRating;
+        document.getElementById('lbl-debt').innerText = formatIDR(window.state.debtBank);
+    }
+
+    window.takeLoan = function() {
+        window.state.cash += 100000000;
+        window.state.debtBank += 100000000;
+        log("Mengambil pinjaman bank Rp 100 JT.");
+        updateUI();
+        saveGameData(currentUser.uid);
+    }
+
+    window.payLoan = function() {
+        if (window.state.debtBank < 100000000 || window.state.cash < 100000000) return;
+        window.state.cash -= 100000000;
+        window.state.debtBank -= 100000000;
+        log("Membayar utang bank Rp 100 JT.");
+        updateUI();
+        saveGameData(currentUser.uid);
+    }
+
+    window.processTurn = async function() {
+        let prodQty = parseInt(document.getElementById('in-prod').value) || 0;
+        let price = parseInt(document.getElementById('in-price').value) || 0;
+
+        let cogs = prodQty * 45000;
+        let ops = 15000000 + (window.state.debtBank * 0.02);
+
+        if (cogs + ops > window.state.cash) {
+            alert("Kas tidak cukup untuk biaya operasional!");
+            return;
+        }
+
+        window.state.cash -= (cogs + ops);
+        let sold = Math.min(prodQty, 1000);
+        let revenue = sold * price;
+        window.state.cash += revenue;
+
+        log(`[Bulan ${window.state.month}] Terjual: ${sold} Unit. Rev: ${formatIDR(revenue)}.`);
+
+        window.state.month++;
+
+        updateUI();
+        
+        // Auto-save ke database cloud tiap selesai jalankan bulan
+        if (currentUser) {
+            await saveGameData(currentUser.uid);
+        }
+    }
+</script>
+
+</body>
+</html>
