@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Managers & Broadcast</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Single Company Rule</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -199,8 +199,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10 + Managers & Broadcast</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">Manager Produksi & Marketing oleh GM, Broadcast Pop-up Admin, Target Bulanan, RUPS & Buyback.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + Single Company Rule</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">Satu perusahaan per user, Manager Produksi/Marketing oleh GM, Broadcast Admin, & RUPS.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -806,7 +806,6 @@
                 }
             }
 
-            // Cek Broadcast Pop-up
             checkAndShowBroadcast();
 
             renderDebugUsers();
@@ -1410,7 +1409,8 @@
             if (myComp.applicants) {
                 myComp.applicants.forEach(app => {
                     let gmCertBadge = app.gmCertified ? `<span class="badge" style="background:#dcfce7; color:#166534; margin-left:6px;">🎓 Calon GM</span>` : "";
-                    tbodyApp.innerHTML += `<tr><td>${app.name} ${gmCertBadge}</td><td><span class="badge">${app.role}</span></td><td><button class="btn btn-success" onclick="hireUser('${myComp.id}', '${app.name}')">Terima</button></td></tr>`;
+                    let workingBadge = app.companyId ? `<span class="badge" style="background:#fee2e2; color:#991b1b; margin-left:6px;">⚠️ Sudah Kerja di PT Lain</span>` : `<span class="badge" style="background:#dcfce7; color:#166534; margin-left:6px;">Belum Bekerja</span>`;
+                    tbodyApp.innerHTML += `<tr><td>${app.name} ${gmCertBadge} ${workingBadge}</td><td><span class="badge">${app.role}</span></td><td><button class="btn btn-success" onclick="hireUser('${myComp.id}', '${app.name}')">Terima</button></td></tr>`;
                 });
             }
             if(!myComp.applicants || myComp.applicants.length === 0) tbodyApp.innerHTML = `<tr><td colspan="3" style="color:var(--secondary)">Tidak ada pelamar.</td></tr>`;
@@ -1460,6 +1460,7 @@
         const d4 = document.getElementById('doc-izin').checked;
 
         if (!name || !d1 || !d2 || !d3 || !d4) return alert("Lengkapi nama PT dan dokumen legalitas!");
+        if (db.currentUser.companyId) return alert("Anda sudah terikat bekerja atau mendirikan perusahaan lain! Resign atau bubarkan terlebih dahulu.");
 
         let compId = 'comp_' + Date.now();
         db.companies[compId] = {
@@ -1745,6 +1746,11 @@
     async function hireUser(compId, appName) {
         let comp = db.companies[compId];
         let app = db.users[appName];
+
+        if (app.companyId) {
+            return alert(`User ${appName} sudah bekerja di perusahaan lain! Harap minta ia resign terlebih dahulu.`);
+        }
+
         comp.applicants = comp.applicants.filter(a => a.name !== appName);
         if (!comp.staff) comp.staff = [];
         comp.staff.push(app);
@@ -1791,7 +1797,7 @@
             let salaryEl = document.getElementById('ui-staff-salary');
             if (salaryEl) salaryEl.innerText = `Rp ${mySal.toLocaleString('id-ID')} / hari`;
 
-            market.innerHTML = `<div class="company-box" style="border-color:var(--success)"><h4>Bekerja di: ${activeComp.name}</h4><button class="btn btn-danger" style="margin-top:10px;" onclick="resignJob()">Resign</button></div>`;
+            market.innerHTML = `<div class="company-box" style="border-color:var(--success)"><h4>Bekerja di: ${activeComp.name}</h4><p style="font-size:0.85rem; color:var(--secondary); margin-top:4px;">Anda terikat di 1 perusahaan. Resign jika ingin melamar ke perusahaan lain.</p><button class="btn btn-danger" style="margin-top:10px;" onclick="resignJob()">Resign dari Perusahaan</button></div>`;
             workspace.classList.remove('hidden');
             let ptEl = document.getElementById('ui-workspace-pt');
             if (ptEl) ptEl.innerText = activeComp.name;
@@ -1827,36 +1833,41 @@
             }
         } else {
             workspace.classList.add('hidden');
-            market.innerHTML = "";
+            market.innerHTML = "<h3 style='margin-bottom:15px;'>📋 Bursa Lowongan Kerja (Pilih 1 Perusahaan)</h3>";
             let compKeys = Object.keys(db.companies);
             if (compKeys.length === 0) {
-                market.innerHTML = "<p style='color:var(--secondary)'>Belum ada perusahaan berdiri.</p>";
+                market.innerHTML += "<p style='color:var(--secondary)'>Belum ada perusahaan berdiri.</p>";
                 return;
             }
             compKeys.forEach(id => {
                 let comp = db.companies[id];
                 let hasApp = comp.applicants && comp.applicants.some(a => a.name === db.currentUser.name);
-                let btnHtml = hasApp ? `<button class="btn btn-secondary" disabled>Lamaran Terkirim</button>` : `<button class="btn btn-primary" onclick="applyJob('${id}')">Lamar</button>`;
-                market.innerHTML += `<div class="company-box"><h4>${comp.name}</h4><p>CEO: ${comp.ceoName}</p>${btnHtml}</div>`;
+                let btnHtml = hasApp ? `<button class="btn btn-secondary" disabled>Lamaran Terkirim</button>` : `<button class="btn btn-primary" onclick="applyJob('${id}')">Lamar Pekerjaan</button>`;
+                market.innerHTML += `<div class="company-box"><h4>${comp.name}</h4><p style="margin-bottom:8px;">CEO: ${comp.ceoName}</p>${btnHtml}</div>`;
             });
         }
     }
 
     async function applyJob(compId) {
+        if (db.currentUser.companyId) {
+            return alert("Anda sudah bekerja di suatu perusahaan! Anda hanya bisa bekerja di 1 perusahaan. Resign terlebih dahulu jika ingin melamar ke perusahaan lain.");
+        }
         if (!db.companies[compId].applicants) db.companies[compId].applicants = [];
         db.companies[compId].applicants.push(db.currentUser);
         await saveGame();
+        alert("Lamaran berhasil dikirim!");
         renderStaff();
     }
 
     async function resignJob() {
-        if(confirm("Keluar dari perusahaan?")) {
+        if(confirm("Apakah Anda yakin ingin resign? Anda akan keluar dari perusahaan ini dan dapat melamar ke seluruh perusahaan lain.")) {
             let comp = db.companies[db.currentUser.companyId];
             if (comp && comp.staff) {
                 comp.staff = comp.staff.filter(s => s.name !== db.currentUser.name);
             }
             db.currentUser.companyId = null;
             await saveGame();
+            alert("Anda telah berhasil resign. Sekarang Anda bebas melamar ke perusahaan lain.");
             renderStaff();
         }
     }
