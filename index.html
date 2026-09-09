@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Certification Update</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Managers & Broadcast</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -159,6 +159,17 @@
             gap: 15px;
         }
 
+        /* Modal Pop-up Broadcast Admin */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background: #fff; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; border-top: 5px solid var(--primary);
+        }
+
         /* Status Firebase Realtime */
         .cloud-status {
             position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: #fff;
@@ -171,6 +182,15 @@
 </head>
 <body>
 
+<!-- POP-UP BROADCAST NOTIFICATION MODAL -->
+<div id="broadcast-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 style="color: var(--primary); margin-bottom: 10px;">📢 Pengumuman Penting Admin</h3>
+        <p id="broadcast-message-text" style="font-size: 1rem; color: var(--text); margin-bottom: 20px; line-height: 1.5;"></p>
+        <button class="btn btn-primary" style="width: 100%;" onclick="closeBroadcastModal()">Tutup Pengumuman</button>
+    </div>
+</div>
+
 <div id="cloud-toast" class="cloud-status">
     <span id="cloud-dot" class="dot"></span>
     <span id="cloud-text">Menghubungkan ke Firebase...</span>
@@ -179,8 +199,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10 + Certification Update</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">Sertifikasi Pegawai Rp 500.000 (Maks 250 Unit/Hari), Buyback Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + Managers & Broadcast</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">Manager Produksi & Marketing oleh GM, Broadcast Pop-up Admin, Target Bulanan, RUPS & Buyback.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -193,12 +213,12 @@
         <div id="auth-role-section">
             <h3 style="margin-top: 16px;">Pilih Role:</h3>
             <div class="role-grid" id="role-selection">
-                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & Direct Transfer</small></div>
-                <div class="role-card" data-role="General Manager" onclick="selectRole('General Manager')"><strong>General Manager</strong><br><small>Usul Divisi & Produk</small></div>
+                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & Target</small></div>
+                <div class="role-card" data-role="General Manager" onclick="selectRole('General Manager')"><strong>General Manager</strong><br><small>Training & Manager</small></div>
                 <div class="role-card" data-role="Direktur Keuangan" onclick="selectRole('Direktur Keuangan')"><strong>Dir. Keuangan</strong><br><small>Kas & Bonus</small></div>
-                <div class="role-card" data-role="Staff Marketing" onclick="selectRole('Staff Marketing')"><strong>Marketing & Sales</strong><br><small>Jual Produk</small></div>
-                <div class="role-card" data-role="Staff Produksi" onclick="selectRole('Staff Produksi')"><strong>Produksi</strong><br><small>Stok Inventaris</small></div>
-                <div class="role-card" data-role="Admin" onclick="selectRole('Admin')" style="border-color: var(--warning); background: #fffbeb;"><strong>👑 Admin</strong><br><small>Kontrol Penuh</small></div>
+                <div class="role-card" data-role="Staff Marketing" onclick="selectRole('Staff Marketing')"><strong>Staff Marketing</strong><br><small>Jual Produk</small></div>
+                <div class="role-card" data-role="Staff Produksi" onclick="selectRole('Staff Produksi')"><strong>Staff Produksi</strong><br><small>Stok Inventaris</small></div>
+                <div class="role-card" data-role="Admin" onclick="selectRole('Admin')" style="border-color: var(--warning); background: #fffbeb;"><strong>👑 Admin</strong><br><small>Kontrol & Broadcast</small></div>
             </div>
         </div>
         
@@ -229,7 +249,7 @@
             <button class="nav-tab active" onclick="switchTab('workspace', this)">🏢 Ruang Kerja / Perusahaan</button>
             <button class="nav-tab" onclick="switchTab('marketplace', this)">🛍️ Marketplace Produk</button>
             <button class="nav-tab" onclick="switchTab('stockexchange', this)">📈 Bursa Saham (IPO)</button>
-            <button class="nav-tab" onclick="switchTab('rups', this)">🏛️ RUPS, Buyback & Voting</button>
+            <button class="nav-tab" onclick="switchTab('rups', this)">🏛️ RUPS, Target & Voting</button>
             <button class="nav-tab" onclick="switchTab('bank', this)">🏦 Bank & Pinjaman</button>
             <button class="nav-tab" onclick="switchTab('profile', this)">🔐 Profil & Password</button>
             <button class="nav-tab hidden" id="tab-btn-admin" onclick="switchTab('admin', this)">👑 Panel Admin</button>
@@ -241,8 +261,17 @@
             <!-- ADMIN VIEW -->
             <div id="view-admin" class="hidden">
                 <div class="card" style="border: 2px solid var(--warning);">
-                    <h3 style="color: var(--warning);">👑 Panel Kontrol Super Admin (Supervisi & Manajemen Keuangan)</h3>
+                    <h3 style="color: var(--warning);">👑 Panel Kontrol Super Admin (Broadcast & Manajemen Keuangan)</h3>
                     
+                    <!-- BROADCAST NOTIFICATION BOX -->
+                    <div style="background:#fffbeb; padding:15px; border-radius:8px; border:1px solid var(--warning); margin-bottom: 25px;">
+                        <h4 style="color:var(--warning);">📢 Kirim Pemberitahuan Pop-up ke Seluruh User</h4>
+                        <p style="font-size: 0.85rem; color:var(--secondary); margin-bottom: 10px;">Pesan ini akan muncul sebagai pop-up instan di layar semua user yang sedang login.</p>
+                        <textarea id="admin-broadcast-text" rows="3" placeholder="Tulis isi pengumuman broadcast..."></textarea>
+                        <button class="btn btn-warning" onclick="sendAdminBroadcast()">Kirim Broadcast Pop-up</button>
+                        <button class="btn btn-danger" onclick="clearAdminBroadcast()" style="margin-left: 10px;">Hentikan / Tutup Broadcast</button>
+                    </div>
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
                         <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
                             <h4 style="color:var(--primary);">🔐 Ubah Password User</h4>
@@ -315,7 +344,7 @@
                 <div class="card hidden" id="ceo-manage-company">
                     <h3 id="ui-company-name">Nama PT</h3>
                     
-                    <!-- CEO WAREHOUSE & IPO CHECK PANEL -->
+                    <!-- CEO WAREHOUSE & TARGET PANEL -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <!-- WAREHOUSE BOX -->
                         <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px;">
@@ -324,13 +353,24 @@
                             <div id="ceo-warehouse-list" style="max-height: 150px; overflow-y: auto;"></div>
                         </div>
 
-                        <!-- IPO & VALUATION BOX -->
-                        <div style="background: #eff6ff; border: 2px solid var(--primary); padding: 15px; border-radius: 8px;">
-                            <h4 style="color: var(--primary);">📈 Bursa & Valuasi IPO</h4>
-                            <p>Valuasi PT: <strong id="ui-company-valuation" style="color:var(--success);">Rp 0</strong></p>
-                            <p style="font-size:0.85rem; color:var(--secondary); margin-bottom: 10px;">Min. Valuasi IPO: Rp 100 Juta</p>
-                            <div id="ipo-action-area"></div>
+                        <!-- CEO TARGET BULANAN (JIKA BELUM IPO) -->
+                        <div id="ceo-target-section" style="background: #fffbeb; border: 2px solid var(--warning); padding: 15px; border-radius: 8px;">
+                            <h4 style="color: var(--warning);">🎯 Target Bulanan Perusahaan (Non-IPO)</h4>
+                            <p style="font-size:0.8rem; color:var(--secondary); margin-bottom:8px;">CEO menetapkan target produksi & penjualan bulanan.</p>
+                            <label style="font-size:0.8rem;">Target Produksi (Unit/Bulan):</label>
+                            <input type="number" id="ceo-target-prod" placeholder="Target Produksi" style="margin-bottom:6px;" />
+                            <label style="font-size:0.8rem;">Target Penjualan (Unit/Bulan):</label>
+                            <input type="number" id="ceo-target-sales" placeholder="Target Penjualan" style="margin-bottom:6px;" />
+                            <button class="btn btn-warning" style="width:100%; font-size:0.85rem;" onclick="saveCeoMonthlyTargets()">Simpan Target Bulanan</button>
                         </div>
+                    </div>
+
+                    <!-- IPO & VALUATION BOX -->
+                    <div style="background: #eff6ff; border: 2px solid var(--primary); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: var(--primary);">📈 Bursa & Valuasi IPO</h4>
+                        <p>Valuasi PT: <strong id="ui-company-valuation" style="color:var(--success);">Rp 0</strong></p>
+                        <p style="font-size:0.85rem; color:var(--secondary); margin-bottom: 10px;">Min. Valuasi IPO: Rp 100 Juta (Jika IPO, target ditentukan oleh Pemegang Saham).</p>
+                        <div id="ipo-action-area"></div>
                     </div>
 
                     <!-- CEO CORPORATE ACTIONS (SAHAM BARU & BUYBACK) -->
@@ -361,6 +401,7 @@
                         <div>
                             <p><strong>Hari Perusahaan:</strong> <span id="ui-ceo-day" style="color:var(--primary); font-size:1.1rem; font-weight:bold;">Hari ke-1</span> (Bulan ke-<span id="ui-ceo-month">1</span>)</p>
                             <p><strong>Kas Perusahaan:</strong> <span id="ui-company-treasury" style="color:var(--success); font-size:1.1rem; font-weight:bold;">Rp 0</span></p>
+                            <p style="font-size:0.85rem; color:var(--secondary); margin-top:4px;">Progres Bulan Ini -> Produksi: <strong id="ui-prog-prod">0</strong> / Target <span id="ui-target-prod">0</span> | Penjualan: <strong id="ui-prog-sales">0</strong> / Target <span id="ui-target-sales">0</span></p>
                         </div>
                         <button class="btn btn-warning" onclick="ceoAdvanceDay()">🌙 Majukan Hari Perusahaan (+1 Hari)</button>
                     </div>
@@ -398,11 +439,13 @@
                     <hr style="margin: 16px 0; border: 1px solid #e2e8f0;">
 
                     <h4>Pengaturan Gaji Harian per Role</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
-                        <div><label style="font-size:0.85rem;">General Manager</label><input type="number" id="salary-gm" /></div>
-                        <div><label style="font-size:0.85rem;">Direktur Keuangan</label><input type="number" id="salary-fin" /></div>
-                        <div><label style="font-size:0.85rem;">Staff Marketing</label><input type="number" id="salary-mkt" /></div>
-                        <div><label style="font-size:0.85rem;">Staff Produksi</label><input type="number" id="salary-prod" /></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                        <div><label style="font-size:0.8rem;">General Manager</label><input type="number" id="salary-gm" /></div>
+                        <div><label style="font-size:0.8rem;">Direktur Keuangan</label><input type="number" id="salary-fin" /></div>
+                        <div><label style="font-size:0.8rem;">Manager Produksi</label><input type="number" id="salary-mgrprod" /></div>
+                        <div><label style="font-size:0.8rem;">Manager Marketing</label><input type="number" id="salary-mgrmkt" /></div>
+                        <div><label style="font-size:0.8rem;">Staff Marketing</label><input type="number" id="salary-mkt" /></div>
+                        <div><label style="font-size:0.8rem;">Staff Produksi</label><input type="number" id="salary-prod" /></div>
                     </div>
                     <button class="btn btn-success" onclick="updateSalarySettings()">Simpan Gaji</button>
 
@@ -429,7 +472,7 @@
                 </div>
             </div>
 
-            <!-- STAFF / GM VIEW -->
+            <!-- STAFF / GM / MANAGERS VIEW -->
             <div id="view-staff" class="hidden">
                 <div id="job-market"></div>
                 <div id="staff-workspace" class="hidden" style="margin-top: 20px;">
@@ -438,11 +481,41 @@
                         Gaji Anda: <strong id="ui-staff-salary" style="color:var(--success);">Rp 0 / hari</strong>
                     </p>
                     
+                    <!-- GM WORKSPACE -->
                     <div id="workspace-gm" class="hidden">
                         <h4>Ajukan Produk Baru ke CEO</h4>
                         <input type="text" id="gm-prod-name" placeholder="Nama Produk" />
                         <input type="number" id="gm-prod-cost" placeholder="Estimasi HPP (Rp)" />
                         <button class="btn btn-warning" style="margin-bottom:20px;" onclick="submitGMProposal()">Kirim Usulan Produk</button>
+
+                        <hr style="margin: 15px 0; border: 1px solid #e2e8f0;">
+
+                        <h4>🎓 Pelatihan Calon General Manager Baru</h4>
+                        <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:20px;">
+                            <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:10px;">GM dapat melatih staff agar tersertifikasi menjadi calon GM / Manager.</p>
+                            <label>Pilih Karyawan Staff:</label>
+                            <select id="gm-train-staff">
+                                <option value="">-- Pilih Staff --</option>
+                            </select>
+                            <button class="btn btn-success" onclick="trainNewGM()">Latih Staff Menjadi Calon GM</button>
+                        </div>
+
+                        <hr style="margin: 15px 0; border: 1px solid #e2e8f0;">
+
+                        <h4>⭐ Angkat Staff Terlatih Menjadi Manager (Produksi / Marketing)</h4>
+                        <div style="background:#fffbeb; padding:15px; border-radius:8px; border:1px solid var(--warning); margin-bottom:20px;">
+                            <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:10px;">Hanya staff yang sudah dilatih (calon GM) yang dapat diangkat menjadi Manager.</p>
+                            <label>Pilih Staff Calon GM:</label>
+                            <select id="gm-appoint-staff">
+                                <option value="">-- Pilih Staff Calon GM --</option>
+                            </select>
+                            <label>Pilih Jabatan Manager Tujuan:</label>
+                            <select id="gm-appoint-role">
+                                <option value="Manager Produksi">Manager Produksi</option>
+                                <option value="Manager Marketing">Manager Marketing</option>
+                            </select>
+                            <button class="btn btn-warning" onclick="appointManager()">Angkat Menjadi Manager</button>
+                        </div>
 
                         <hr style="margin: 15px 0; border: 1px solid #e2e8f0;">
 
@@ -458,11 +531,36 @@
                                 <option value="Staff Produksi">Staff Produksi</option>
                                 <option value="General Manager">General Manager</option>
                                 <option value="Direktur Keuangan">Direktur Keuangan</option>
+                                <option value="Manager Produksi">Manager Produksi</option>
+                                <option value="Manager Marketing">Manager Marketing</option>
                             </select>
                             <button class="btn btn-warning" onclick="submitRoleProposal()">Kirim Usulan Perpindahan Divisi</button>
                         </div>
                     </div>
 
+                    <!-- MANAGER PRODUKSI WORKSPACE -->
+                    <div id="workspace-mgrprod" class="hidden">
+                        <h4>👔 Ruang Kerja Manager Produksi (Supervisi Divisi Produksi)</h4>
+                        <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:15px;">Anda mengawasi dan mengelola kinerja staff produksi di perusahaan.</p>
+                        <h5>Daftar Staff Produksi di Perusahaan:</h5>
+                        <table>
+                            <thead><tr><th>Nama Staff</th><th>Status Sertifikasi Produksi</th><th>Status Calon GM</th></tr></thead>
+                            <tbody id="table-mgr-prod-staff"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- MANAGER MARKETING WORKSPACE -->
+                    <div id="workspace-mgrmkt" class="hidden">
+                        <h4>👔 Ruang Kerja Manager Marketing (Supervisi Divisi Marketing)</h4>
+                        <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:15px;">Anda mengawasi dan mengelola kinerja staff marketing di perusahaan.</p>
+                        <h5>Daftar Staff Marketing di Perusahaan:</h5>
+                        <table>
+                            <thead><tr><th>Nama Staff</th><th>Status Calon GM</th></tr></thead>
+                            <tbody id="table-mgr-mkt-staff"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- FINANCE WORKSPACE -->
                     <div id="workspace-finance" class="hidden">
                         <h4>Direktur Keuangan: Tetapkan Harga Jual Produk</h4>
                         <table>
@@ -490,6 +588,7 @@
                         </table>
                     </div>
 
+                    <!-- MARKETING WORKSPACE -->
                     <div id="workspace-marketing" class="hidden">
                         <h4>Staff Marketing & Sales: Penjualan Produk</h4>
                         <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:15px;">Anda dapat memasarkan produk perusahaan ke Marketplace atau melakukan **Penjualan Langsung (Direct Sales)** ke user lain.</p>
@@ -516,6 +615,7 @@
                         </table>
                     </div>
 
+                    <!-- PRODUCTION WORKSPACE -->
                     <div id="workspace-production" class="hidden">
                         <h4>Staff Produksi: Kapasitas & Inventaris Stok Perusahaan</h4>
                         <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
@@ -568,8 +668,8 @@
         <!-- TAB 4: RUPS, BUYBACK & VOTING CEO -->
         <div id="tab-rups" class="tab-content hidden">
             <div class="card">
-                <h3>🏛️ RUPS, Dividen, Approval Buyback & Voting CEO</h3>
-                <p style="color: var(--secondary); margin-bottom: 20px;">Tempat para pemegang saham memberikan suara RUPS, persetujuan tawaran Buyback saham, dan pemilihan CEO baru.</p>
+                <h3>🏛️ RUPS, Target Bulanan, Buyback & Voting CEO</h3>
+                <p style="color: var(--secondary); margin-bottom: 20px;">Tempat Pemegang Saham menentukan target bulanan perusahaan IPO, RUPS kebijakan darurat jika target gagal, persetujuan Buyback, dan pemilihan CEO baru.</p>
                 
                 <div id="rups-access-container"></div>
             </div>
@@ -667,6 +767,8 @@
         rupsProposals: [],      
         ceoElectionProposals: [],
         buybackProposals: [],
+        rupsPolicyProposals: [],
+        broadcastMessage: { text: "", active: false },
         adminCode: "Bisnis2026"
     };
     let selectedRole = "";
@@ -693,6 +795,8 @@
                 db.rupsProposals = parsed.rupsProposals || [];
                 db.ceoElectionProposals = parsed.ceoElectionProposals || [];
                 db.buybackProposals = parsed.buybackProposals || [];
+                db.rupsPolicyProposals = parsed.rupsPolicyProposals || [];
+                db.broadcastMessage = parsed.broadcastMessage || { text: "", active: false };
                 db.adminCode = parsed.adminCode || "Bisnis2026";
 
                 if (db.currentUser && db.users[db.currentUser.name]) {
@@ -701,6 +805,10 @@
                     if (walletEl) walletEl.innerText = `Saldo: Rp ${db.currentUser.wallet.toLocaleString('id-ID')}`;
                 }
             }
+
+            // Cek Broadcast Pop-up
+            checkAndShowBroadcast();
+
             renderDebugUsers();
             if (db.currentUser && !document.getElementById('screen-dashboard').classList.contains('hidden')) {
                 if (db.currentUser.companyId && db.currentUser.role !== 'CEO' && !db.companies[db.currentUser.companyId]) {
@@ -719,6 +827,36 @@
         });
     }
 
+    function checkAndShowBroadcast() {
+        const modal = document.getElementById('broadcast-modal');
+        const textEl = document.getElementById('broadcast-message-text');
+        if (db.broadcastMessage && db.broadcastMessage.active && db.broadcastMessage.text) {
+            textEl.innerText = db.broadcastMessage.text;
+            modal.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
+        }
+    }
+
+    function closeBroadcastModal() {
+        document.getElementById('broadcast-modal').classList.add('hidden');
+    }
+
+    async function sendAdminBroadcast() {
+        let msg = document.getElementById('admin-broadcast-text').value.trim();
+        if (!msg) return alert("Masukkan pesan broadcast!");
+        db.broadcastMessage = { text: msg, active: true };
+        await saveGame();
+        alert("Pesan broadcast berhasil dikirim ke seluruh user!");
+        document.getElementById('admin-broadcast-text').value = "";
+    }
+
+    async function clearAdminBroadcast() {
+        db.broadcastMessage = { text: "", active: false };
+        await saveGame();
+        alert("Broadcast dihentikan dan ditutup.");
+    }
+
     async function saveGame() {
         updateCloudStatus("Menyimpan ke Firebase...");
         try {
@@ -730,6 +868,8 @@
                 rupsProposals: db.rupsProposals,
                 ceoElectionProposals: db.ceoElectionProposals,
                 buybackProposals: db.buybackProposals,
+                rupsPolicyProposals: db.rupsPolicyProposals,
+                broadcastMessage: db.broadcastMessage,
                 adminCode: db.adminCode
             };
             await database.ref('gameData').set(saveData);
@@ -839,6 +979,7 @@
                 role: selectedRole, 
                 companyId: null, 
                 certified: false, 
+                gmCertified: false,
                 wallet: 1000000, 
                 producedToday: 0, 
                 lastDayProcessed: 1,
@@ -1158,6 +1299,20 @@
             document.getElementById('ui-company-treasury').innerText = `Rp ${(myComp.treasury || 0).toLocaleString('id-ID')}`;
             document.getElementById('ui-day-badge').innerText = `Hari ke-${myComp.day || 1}`;
 
+            document.getElementById('ui-prog-prod').innerText = myComp.currentMonthProduction || 0;
+            document.getElementById('ui-target-prod').innerText = myComp.monthlyProductionTarget || 0;
+            document.getElementById('ui-prog-sales').innerText = myComp.currentMonthSales || 0;
+            document.getElementById('ui-target-sales').innerText = myComp.monthlySalesTarget || 0;
+
+            const targetSection = document.getElementById('ceo-target-section');
+            if (myComp.isPublic) {
+                targetSection.classList.add('hidden');
+            } else {
+                targetSection.classList.remove('hidden');
+                document.getElementById('ceo-target-prod').value = myComp.monthlyProductionTarget || 0;
+                document.getElementById('ceo-target-sales').value = myComp.monthlySalesTarget || 0;
+            }
+
             const whContainer = document.getElementById('ceo-warehouse-list');
             whContainer.innerHTML = "";
             if (myComp.products) {
@@ -1195,11 +1350,13 @@
             }
 
             if (!myComp.salaries) {
-                myComp.salaries = { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 };
+                myComp.salaries = { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Manager Produksi': 50000, 'Manager Marketing': 50000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 };
             }
 
             document.getElementById('salary-gm').value = myComp.salaries['General Manager'] || 0;
             document.getElementById('salary-fin').value = myComp.salaries['Direktur Keuangan'] || 0;
+            document.getElementById('salary-mgrprod').value = myComp.salaries['Manager Produksi'] || 0;
+            document.getElementById('salary-mgrmkt').value = myComp.salaries['Manager Marketing'] || 0;
             document.getElementById('salary-mkt').value = myComp.salaries['Staff Marketing'] || 0;
             document.getElementById('salary-prod').value = myComp.salaries['Staff Produksi'] || 0;
 
@@ -1252,21 +1409,22 @@
             tbodyApp.innerHTML = "";
             if (myComp.applicants) {
                 myComp.applicants.forEach(app => {
-                    tbodyApp.innerHTML += `<tr><td>${app.name}</td><td><span class="badge">${app.role}</span></td><td><button class="btn btn-success" onclick="hireUser('${myComp.id}', '${app.name}')">Terima</button></td></tr>`;
+                    let gmCertBadge = app.gmCertified ? `<span class="badge" style="background:#dcfce7; color:#166534; margin-left:6px;">🎓 Calon GM</span>` : "";
+                    tbodyApp.innerHTML += `<tr><td>${app.name} ${gmCertBadge}</td><td><span class="badge">${app.role}</span></td><td><button class="btn btn-success" onclick="hireUser('${myComp.id}', '${app.name}')">Terima</button></td></tr>`;
                 });
             }
             if(!myComp.applicants || myComp.applicants.length === 0) tbodyApp.innerHTML = `<tr><td colspan="3" style="color:var(--secondary)">Tidak ada pelamar.</td></tr>`;
 
-            // RENDER STAFF WITH CEO DIRECT ROLE CHANGE DROP DOWN
             const tbodyStaff = document.getElementById('table-staff');
             tbodyStaff.innerHTML = "";
-            let availableRoles = ['General Manager', 'Direktur Keuangan', 'Staff Marketing', 'Staff Produksi'];
+            let availableRoles = ['General Manager', 'Direktur Keuangan', 'Manager Produksi', 'Manager Marketing', 'Staff Marketing', 'Staff Produksi'];
             if (myComp.staff) {
                 myComp.staff.forEach(st => {
                     let roleOptions = availableRoles.map(r => `<option value="${r}" ${st.role === r ? 'selected' : ''}>${r}</option>`).join('');
+                    let gmCertBadge = st.gmCertified ? `<span class="badge" style="background:#dcfce7; color:#166534; margin-left:6px;">🎓 Calon GM</span>` : "";
                     tbodyStaff.innerHTML += `
                         <tr>
-                            <td><strong>${st.name}</strong></td>
+                            <td><strong>${st.name}</strong> ${gmCertBadge}</td>
                             <td><span class="badge">${st.role}</span></td>
                             <td>
                                 <select id="ceo-changerole-${st.name}" style="padding:4px 6px; font-size:0.85rem; width:150px; display:inline-block; margin-right:6px;">${roleOptions}</select>
@@ -1281,6 +1439,19 @@
         }
     }
 
+    async function saveCeoMonthlyTargets() {
+        let myComp = getMyCompany();
+        if (myComp.isPublic) return alert("Perusahaan sudah IPO! Target bulanan ditentukan oleh Pemegang Saham di RUPS.");
+        let prodTarget = parseInt(document.getElementById('ceo-target-prod').value) || 0;
+        let salesTarget = parseInt(document.getElementById('ceo-target-sales').value) || 0;
+
+        myComp.monthlyProductionTarget = prodTarget;
+        myComp.monthlySalesTarget = salesTarget;
+        await saveGame();
+        alert("Target produksi & penjualan bulanan berhasil disimpan oleh CEO!");
+        renderCEO();
+    }
+
     async function createCompany() {
         const name = document.getElementById('input-company-name').value.trim();
         const d1 = document.getElementById('doc-akta').checked;
@@ -1293,7 +1464,9 @@
         let compId = 'comp_' + Date.now();
         db.companies[compId] = {
             id: compId, name: name, ceoName: db.currentUser.name, day: 1, month: 1,
-            salaries: { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 },
+            monthlyProductionTarget: 100, monthlySalesTarget: 50,
+            currentMonthProduction: 0, currentMonthSales: 0, targetFailed: false,
+            salaries: { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Manager Produksi': 50000, 'Manager Marketing': 50000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 },
             treasury: 2000000, products: [], staff: [], applicants: [], gmProposals: [], bonusProposals: [], roleProposals: [], transactions: [],
             isPublic: false, stockPrice: 0, totalShares: 10000, availableShares: 5000, lastShareIssueDay: 1
         };
@@ -1318,7 +1491,7 @@
         logCompanyTransaction(comp, 'MASUK', ipoInjection, 'Suntikan Dana Injeksi Go Public (IPO)');
 
         await saveGame();
-        alert(`🎉 Selamat! Perusahaan ${comp.name} sukses IPO (Go Public / Tbk)!`);
+        alert(`🎉 Selamat! Perusahaan ${comp.name} sukses IPO (Go Public / Tbk)! Target bulanan kini diatur oleh Pemegang Saham.`);
         renderCEO();
     }
 
@@ -1388,6 +1561,8 @@
         if (!myComp.salaries) myComp.salaries = {};
         myComp.salaries['General Manager'] = parseFloat(document.getElementById('salary-gm').value) || 0;
         myComp.salaries['Direktur Keuangan'] = parseFloat(document.getElementById('salary-fin').value) || 0;
+        myComp.salaries['Manager Produksi'] = parseFloat(document.getElementById('salary-mgrprod').value) || 0;
+        myComp.salaries['Manager Marketing'] = parseFloat(document.getElementById('salary-mgrmkt').value) || 0;
         myComp.salaries['Staff Marketing'] = parseFloat(document.getElementById('salary-mkt').value) || 0;
         myComp.salaries['Staff Produksi'] = parseFloat(document.getElementById('salary-prod').value) || 0;
         await saveGame();
@@ -1435,18 +1610,33 @@
         logCompanyTransaction(myComp, 'KELUAR', totalSal, `Pembayaran Gaji Karyawan Hari ke-${myComp.day || 1}`);
         myComp.day = (myComp.day || 1) + 1;
 
-        if (myComp.isPublic) {
-            fluctuationStockPriceOnActivity(myComp, 1.02);
-        }
-
-        if (myComp.day % 30 === 1 && myComp.day > 1) {
+        if ((myComp.day - 1) % 30 === 0 && myComp.day > 1) {
             myComp.month = (myComp.month || 1) + 1;
+            
+            let prodMet = (myComp.currentMonthProduction || 0) >= (myComp.monthlyProductionTarget || 0);
+            let salesMet = (myComp.currentMonthSales || 0) >= (myComp.monthlySalesTarget || 0);
+
+            if (!prodMet || !salesMet) {
+                myComp.targetFailed = true;
+                logCompanyTransaction(myComp, 'KELUAR', 0, `PERINGATAN: Target Bulanan Gagal Tercapai! (Prod: ${myComp.currentMonthProduction}/${myComp.monthlyProductionTarget}, Sales: ${myComp.currentMonthSales}/${myComp.monthlySalesTarget})`);
+            } else {
+                myComp.targetFailed = false;
+                logCompanyTransaction(myComp, 'MASUK', 0, `SUKSES: Target Bulanan Tercapai untuk Bulan ke-${myComp.month - 1}`);
+            }
+
+            myComp.currentMonthProduction = 0;
+            myComp.currentMonthSales = 0;
+
             db.loans.forEach(l => {
                 if (l.status === 'Approved' && l.targetType === 'Company' && l.companyId === myComp.id) {
                     let interest = l.totalDue * 0.05;
                     l.totalDue += interest;
                 }
             });
+        }
+
+        if (myComp.isPublic) {
+            fluctuationStockPriceOnActivity(myComp, 1.02);
         }
 
         if (myComp.staff) {
@@ -1529,7 +1719,6 @@
         renderCEO();
     }
 
-    // CEO DIRECTLY CHANGE WORKER ROLE/DIVISION
     async function ceoDirectChangeRole(compId, staffName) {
         let comp = db.companies[compId];
         let selectEl = document.getElementById(`ceo-changerole-${staffName}`);
@@ -1608,6 +1797,8 @@
             if (ptEl) ptEl.innerText = activeComp.name;
 
             document.getElementById('workspace-gm').classList.add('hidden');
+            document.getElementById('workspace-mgrprod').classList.add('hidden');
+            document.getElementById('workspace-mgrmkt').classList.add('hidden');
             document.getElementById('workspace-finance').classList.add('hidden');
             document.getElementById('workspace-marketing').classList.add('hidden');
             document.getElementById('workspace-production').classList.add('hidden');
@@ -1616,6 +1807,12 @@
             if (db.currentUser.role === 'General Manager') {
                 document.getElementById('workspace-gm').classList.remove('hidden');
                 renderGMWorkspace(activeComp);
+            } else if (db.currentUser.role === 'Manager Produksi') {
+                document.getElementById('workspace-mgrprod').classList.remove('hidden');
+                renderMgrProdWorkspace(activeComp);
+            } else if (db.currentUser.role === 'Manager Marketing') {
+                document.getElementById('workspace-mgrmkt').classList.remove('hidden');
+                renderMgrMktWorkspace(activeComp);
             } else if (db.currentUser.role === 'Direktur Keuangan') {
                 document.getElementById('workspace-finance').classList.remove('hidden');
                 renderFinanceWorkspace(activeComp);
@@ -1678,6 +1875,26 @@
     }
 
     function renderGMWorkspace(comp) {
+        const trainSelect = document.getElementById('gm-train-staff');
+        trainSelect.innerHTML = '<option value="">-- Pilih Staff --</option>';
+        if (comp.staff) {
+            comp.staff.forEach(st => {
+                if (st.name !== db.currentUser.name && !st.gmCertified) {
+                    trainSelect.innerHTML += `<option value="${st.name}">${st.name} (${st.role})</option>`;
+                }
+            });
+        }
+
+        const appointSelect = document.getElementById('gm-appoint-staff');
+        appointSelect.innerHTML = '<option value="">-- Pilih Staff Calon GM --</option>';
+        if (comp.staff) {
+            comp.staff.forEach(st => {
+                if (st.name !== db.currentUser.name && st.gmCertified && st.role !== 'Manager Produksi' && st.role !== 'Manager Marketing') {
+                    appointSelect.innerHTML += `<option value="${st.name}">${st.name} (${st.role})</option>`;
+                }
+            });
+        }
+
         const staffSelect = document.getElementById('gm-transfer-staff');
         staffSelect.innerHTML = '<option value="">-- Pilih Karyawan --</option>';
         if (comp.staff) {
@@ -1687,6 +1904,64 @@
                 }
             });
         }
+    }
+
+    async function trainNewGM() {
+        let targetName = document.getElementById('gm-train-staff').value;
+        if (!targetName) return alert("Pilih staff yang akan dilatih!");
+        let targetUser = db.users[targetName];
+        if (!targetUser) return alert("Staff tidak ditemukan!");
+
+        targetUser.gmCertified = true;
+        let comp = db.companies[db.currentUser.companyId];
+        let compStaff = comp.staff.find(s => s.name === targetName);
+        if (compStaff) compStaff.gmCertified = true;
+
+        await saveGame();
+        alert(`Berhasil melatih ${targetName} menjadi Calon General Manager bersertifikasi!`);
+        renderGMWorkspace(comp);
+    }
+
+    async function appointManager() {
+        let targetName = document.getElementById('gm-appoint-staff').value;
+        let newRole = document.getElementById('gm-appoint-role').value;
+
+        if (!targetName) return alert("Pilih staff calon GM terlebih dahulu!");
+        let targetUser = db.users[targetName];
+        if (!targetUser) return alert("Staff tidak ditemukan!");
+
+        targetUser.role = newRole;
+        let comp = db.companies[db.currentUser.companyId];
+        let compStaff = comp.staff.find(s => s.name === targetName);
+        if (compStaff) compStaff.role = newRole;
+
+        logCompanyTransaction(comp, 'MASUK', 0, `GM mengangkat ${targetName} menjadi ${newRole}`);
+        await saveGame();
+        alert(`Berhasil mengangkat ${targetName} menjadi ${newRole}!`);
+        renderGMWorkspace(comp);
+    }
+
+    function renderMgrProdWorkspace(comp) {
+        const tbody = document.getElementById('table-mgr-prod-staff');
+        tbody.innerHTML = "";
+        let prodStaff = comp.staff ? comp.staff.filter(s => s.role === 'Staff Produksi') : [];
+        prodStaff.forEach(st => {
+            let certBadge = st.certified ? `<span class="badge" style="background:#dcfce7; color:#166534;">Bersertifikasi (250 unit)</span>` : `<span class="badge">Belum (20 unit)</span>`;
+            let gmCertBadge = st.gmCertified ? `<span class="badge" style="background:#e0f2fe; color:#0369a1;">🎓 Calon GM</span>` : `-`;
+            tbody.innerHTML += `<tr><td><strong>${st.name}</strong></td><td>${certBadge}</td><td>${gmCertBadge}</td></tr>`;
+        });
+        if (prodStaff.length === 0) tbody.innerHTML = `<tr><td colspan="3" style="color:var(--secondary)">Tidak ada staff produksi.</td></tr>`;
+    }
+
+    function renderMgrMktWorkspace(comp) {
+        const tbody = document.getElementById('table-mgr-mkt-staff');
+        tbody.innerHTML = "";
+        let mktStaff = comp.staff ? comp.staff.filter(s => s.role === 'Staff Marketing') : [];
+        mktStaff.forEach(st => {
+            let gmCertBadge = st.gmCertified ? `<span class="badge" style="background:#e0f2fe; color:#0369a1;">🎓 Calon GM</span>` : `-`;
+            tbody.innerHTML += `<tr><td><strong>${st.name}</strong></td><td>${gmCertBadge}</td></tr>`;
+        });
+        if (mktStaff.length === 0) tbody.innerHTML = `<tr><td colspan="2" style="color:var(--secondary)">Tidak ada staff marketing.</td></tr>`;
     }
 
     async function submitRoleProposal() {
@@ -1850,6 +2125,7 @@
         buyer.wallet -= totalPrice;
         p.stock -= qty;
         comp.treasury += totalPrice;
+        comp.currentMonthSales = (comp.currentMonthSales || 0) + qty;
         logCompanyTransaction(comp, 'MASUK', totalPrice, `Penjualan Langsung ${qty}x ${p.name} ke ${buyerName}`);
 
         if (comp.isPublic) {
@@ -1920,6 +2196,11 @@
         if (db.currentUser.wallet < 500000) return alert("Saldo tidak cukup untuk pelatihan (Rp 500.000)!");
         db.currentUser.wallet -= 500000;
         db.currentUser.certified = true;
+        let comp = db.companies[db.currentUser.companyId];
+        if (comp && comp.staff) {
+            let staffObj = comp.staff.find(s => s.name === db.currentUser.name);
+            if (staffObj) staffObj.certified = true;
+        }
         await saveGame();
         alert("Sertifikasi berhasil! Kapasitas naik jadi 250 Unit/hari.");
         openDashboard();
@@ -1939,6 +2220,7 @@
         db.currentUser.producedToday += 10;
         p.stock = (p.stock || 0) + 10;
         p.totalProduced = (p.totalProduced || 0) + 10;
+        comp.currentMonthProduction = (comp.currentMonthProduction || 0) + 10;
 
         if (comp.isPublic) {
             fluctuationStockPriceOnActivity(comp, 1.03);
@@ -1994,6 +2276,7 @@
         db.currentUser.wallet -= price;
         if (comp) {
             comp.treasury += companyRevenue;
+            comp.currentMonthSales = (comp.currentMonthSales || 0) + 1;
             logCompanyTransaction(comp, 'MASUK', companyRevenue, `Penjualan Marketplace 1x ${name} (Netto setelah pajak)`);
             if (comp.isPublic) {
                 fluctuationStockPriceOnActivity(comp, 1.04);
@@ -2157,10 +2440,37 @@
 
         let html = "";
 
-        if (isCEO) {
+        let publicCompanies = [];
+        for (let id in db.companies) {
+            let c = db.companies[id];
+            if (c.isPublic) publicCompanies.push(c);
+        }
+
+        if (publicCompanies.length > 0 && (hasShares || isCEO)) {
             html += `
                 <div class="company-box" style="border: 2px solid var(--primary); background: #f8fafc; margin-bottom: 25px;">
-                    <h4 style="color: var(--primary);">📢 Buat Agenda RUPS (Usulan Pembagian Dividen)</h4>
+                    <h4 style="color: var(--primary);">🎯 Atur Target Bulanan Perusahaan (Oleh Pemegang Saham PT IPO)</h4>
+                    <label>Pilih PT IPO:</label>
+                    <select id="rups-target-comp">
+            `;
+            publicCompanies.forEach(c => {
+                html += `<option value="${c.id}">${c.name} (Target Prod: ${c.monthlyProductionTarget || 0}, Target Sales: ${c.monthlySalesTarget || 0})</option>`;
+            });
+            html += `
+                    </select>
+                    <label>Target Produksi (Unit/Bulan):</label>
+                    <input type="number" id="rups-target-prod" placeholder="Target Produksi" />
+                    <label>Target Penjualan (Unit/Bulan):</label>
+                    <input type="number" id="rups-target-sales" placeholder="Target Penjualan" />
+                    <button class="btn btn-primary" onclick="shareholdersSetTargets()">Simpan Target Bulanan Pemegang Saham</button>
+                </div>
+            `;
+        }
+
+        if (isCEO) {
+            html += `
+                <div class="company-box" style="border: 2px solid var(--success); background: #f0fdf4; margin-bottom: 25px;">
+                    <h4 style="color: var(--success);">📢 Buat Agenda RUPS (Usulan Pembagian Dividen)</h4>
                     <label>Pilih Perusahaan Anda:</label>
                     <select id="rups-prop-comp">
             `;
@@ -2171,7 +2481,27 @@
                     </select>
                     <label>Total Nilai Dividen yang Dibagikan (Rp):</label>
                     <input type="number" id="rups-prop-amount" placeholder="Nominal Total Dividen" />
-                    <button class="btn btn-primary" onclick="createRupsProposal()">Ajukan RUPS Dividen</button>
+                    <button class="btn btn-success" onclick="createRupsProposal()">Ajukan RUPS Dividen</button>
+                </div>
+            `;
+        }
+
+        if (publicCompanies.length > 0 && (hasShares || isCEO)) {
+            html += `
+                <div class="company-box" style="border: 2px solid var(--danger); background: #fef2f2; margin-bottom: 25px;">
+                    <h4 style="color: var(--danger);">🏛️ RUPS Kebijakan Darurat (Target Bulanan Gagal)</h4>
+                    <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:10px;">Jika target bulanan perusahaan IPO gagal tercapai, Pemegang Saham dapat mengajukan Rapat Kebijakan Dewan Direksi.</p>
+                    <label>Pilih PT IPO:</label>
+                    <select id="rups-policy-comp">
+            `;
+            publicCompanies.forEach(c => {
+                html += `<option value="${c.id}">${c.name} ${c.targetFailed ? '(⚠️ Target Gagal)' : '(Status Aman)'}</option>`;
+            });
+            html += `
+                    </select>
+                    <label>Kebijakan / Usulan Rapat:</label>
+                    <input type="text" id="rups-policy-desc" placeholder="Contoh: Evaluasi Kinerja CEO / Restrukturisasi Gaji" />
+                    <button class="btn btn-danger" onclick="createRupsPolicyProposal()">Ajukan RUPS Kebijakan</button>
                 </div>
             `;
         }
@@ -2200,12 +2530,6 @@
             });
         }
 
-        let publicCompanies = [];
-        for (let id in db.companies) {
-            let c = db.companies[id];
-            if (c.isPublic) publicCompanies.push(c);
-        }
-
         if (publicCompanies.length > 0 && (hasShares || isCEO)) {
             html += `
                 <div class="company-box" style="border: 2px solid var(--warning); background: #fffbeb; margin-bottom: 25px;">
@@ -2222,7 +2546,9 @@
                     <select id="ceo-prop-candidate">
             `;
             for (let uName in db.users) {
-                html += `<option value="${uName}">${uName} (${db.users[uName].role})</option>`;
+                let uObj = db.users[uName];
+                let gmBadge = uObj.gmCertified ? " 🎓(Calon GM)" : "";
+                html += `<option value="${uName}">${uName} (${uObj.role})${gmBadge}</option>`;
             }
             html += `
                     </select>
@@ -2270,6 +2596,38 @@
             });
         }
 
+        html += `<h4 style="margin-top:30px;">Daftar RUPS Kebijakan Darurat</h4>`;
+        let policyProps = db.rupsPolicyProposals || [];
+        if (policyProps.length === 0) {
+            html += `<p style="color:var(--secondary); margin-bottom:25px;">Belum ada RUPS kebijakan darurat.</p>`;
+        } else {
+            policyProps.forEach((pProp, idx) => {
+                let comp = db.companies[pProp.compId];
+                if (!comp) return;
+
+                let userShares = (db.currentUser.portfolio && db.currentUser.portfolio[pProp.compId]) || 0;
+                let canVote = userShares > 0 || comp.ceoName === db.currentUser.name || db.currentUser.role === 'Admin';
+                let myVote = pProp.voters && pProp.voters[db.currentUser.name];
+
+                let voteStatusHtml = myVote ? `<span class="badge" style="background:#dcfce7; color:#166534;">Anda sudah vote: ${myVote}</span>` : 
+                    (canVote ? `
+                        <button class="btn btn-success" style="padding:4px 10px; font-size:0.8rem;" onclick="voteRupsPolicy(${idx}, 'Setuju')">👍 Setuju</button>
+                        <button class="btn btn-danger" style="padding:4px 10px; font-size:0.8rem;" onclick="voteRupsPolicy(${idx}, 'Tolak')">👎 Tolak</button>
+                    ` : `<span style="color:var(--danger); font-size:0.85rem;">Anda tidak memiliki hak suara.</span>`);
+
+                html += `
+                    <div class="company-box" style="border-left: 4px solid var(--danger);">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4>🏛️ Kebijakan PT ${comp.name}</h4>
+                            <span class="badge">${pProp.status}</span>
+                        </div>
+                        <p style="font-size:0.9rem; margin-top:6px;">Usulan: <strong>${pProp.desc}</strong></p>
+                        <div style="margin-top:10px;">${voteStatusHtml}</div>
+                    </div>
+                `;
+            });
+        }
+
         html += `<h4 style="margin-top:30px;">Daftar Voting Dewan Direksi (Pemilihan CEO IPO)</h4>`;
         let ceoProposals = db.ceoElectionProposals || [];
         if (ceoProposals.length === 0) {
@@ -2308,6 +2666,59 @@
         }
 
         container.innerHTML = html;
+    }
+
+    async function shareholdersSetTargets() {
+        let compId = document.getElementById('rups-target-comp').value;
+        let prodTarget = parseInt(document.getElementById('rups-target-prod').value) || 0;
+        let salesTarget = parseInt(document.getElementById('rups-target-sales').value) || 0;
+
+        let comp = db.companies[compId];
+        let userShares = (db.currentUser.portfolio && db.currentUser.portfolio[compId]) || 0;
+        let isCompCEO = comp.ceoName === db.currentUser.name;
+
+        if (userShares <= 0 && !isCompCEO && db.currentUser.role !== 'Admin') {
+            return alert("Anda harus memiliki saham atau menjadi CEO PT ini untuk mengatur target!");
+        }
+
+        comp.monthlyProductionTarget = prodTarget;
+        comp.monthlySalesTarget = salesTarget;
+        await saveGame();
+        alert(`Target bulanan PT ${comp.name} berhasil diperbarui oleh Pemegang Saham!`);
+        renderRUPS();
+    }
+
+    async function createRupsPolicyProposal() {
+        let compId = document.getElementById('rups-policy-comp').value;
+        let desc = document.getElementById('rups-policy-desc').value.trim();
+
+        if (!compId || !desc) return alert("Pilih PT dan isi usulan kebijakan!");
+        let comp = db.companies[compId];
+
+        if (!db.rupsPolicyProposals) db.rupsPolicyProposals = [];
+        db.rupsPolicyProposals.push({
+            id: 'POLICY_' + Date.now(),
+            compId: compId,
+            desc: desc,
+            status: 'Voting',
+            voters: {}
+        });
+
+        document.getElementById('rups-policy-desc').value = "";
+        await saveGame();
+        alert("Usulan RUPS Kebijakan Darurat berhasil diajukan!");
+        renderRUPS();
+    }
+
+    async function voteRupsPolicy(index, support) {
+        let prop = db.rupsPolicyProposals[index];
+        if (!prop.voters) prop.voters = {};
+        if (prop.voters[db.currentUser.name]) return alert("Anda sudah memberikan suara!");
+
+        prop.voters[db.currentUser.name] = support;
+        await saveGame();
+        alert(`Berhasil memberikan suara: ${support}`);
+        renderRUPS();
     }
 
     async function respondBuyback(index, response) {
