@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Buyback & Saham Baru</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + GM Divisi Transfer</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -179,8 +179,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10 + Buyback & Saham Baru</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">Dilengkapi fitur Penerbitan Saham Baru (Syarat 30 Hari), Buy Back Saham dengan Approval Pemegang Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + GM Divisi Transfer</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">Dilengkapi fitur GM usul perpindahan divisi karyawan (Staff, Produksi, Marketing), Buyback Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -193,8 +193,8 @@
         <div id="auth-role-section">
             <h3 style="margin-top: 16px;">Pilih Role:</h3>
             <div class="role-grid" id="role-selection">
-                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & Buyback</small></div>
-                <div class="role-card" data-role="General Manager" onclick="selectRole('General Manager')"><strong>General Manager</strong><br><small>Usul Produk</small></div>
+                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & Approval</small></div>
+                <div class="role-card" data-role="General Manager" onclick="selectRole('General Manager')"><strong>General Manager</strong><br><small>Usul Divisi & Produk</small></div>
                 <div class="role-card" data-role="Direktur Keuangan" onclick="selectRole('Direktur Keuangan')"><strong>Dir. Keuangan</strong><br><small>Kas & Bonus</small></div>
                 <div class="role-card" data-role="Staff Marketing" onclick="selectRole('Staff Marketing')"><strong>Marketing & Sales</strong><br><small>Jual Produk</small></div>
                 <div class="role-card" data-role="Staff Produksi" onclick="selectRole('Staff Produksi')"><strong>Produksi</strong><br><small>Stok Inventaris</small></div>
@@ -380,6 +380,15 @@
 
                     <hr style="margin: 16px 0; border: 1px solid #e2e8f0;">
 
+                    <!-- USULAN PERPINDAHAN DIVISI DARI GM -->
+                    <h4>Usulan Perpindahan Divisi/Role Karyawan dari GM</h4>
+                    <table>
+                        <thead><tr><th>Karyawan</th><th>Divisi Lama</th><th>Divisi Baru Diusulkan</th><th>Aksi CEO</th></tr></thead>
+                        <tbody id="table-role-proposals"></tbody>
+                    </table>
+
+                    <hr style="margin: 16px 0; border: 1px solid #e2e8f0;">
+
                     <h4>Usulan Bonus Karyawan dari Direktur Keuangan</h4>
                     <table>
                         <thead><tr><th>Direktur Pengusul</th><th>Karyawan Penerima</th><th>Nominal Bonus</th><th>Alasan</th><th>Aksi CEO</th></tr></thead>
@@ -433,7 +442,25 @@
                         <h4>Ajukan Produk Baru ke CEO</h4>
                         <input type="text" id="gm-prod-name" placeholder="Nama Produk" />
                         <input type="number" id="gm-prod-cost" placeholder="Estimasi HPP (Rp)" />
-                        <button class="btn btn-warning" onclick="submitGMProposal()">Kirim Usulan</button>
+                        <button class="btn btn-warning" style="margin-bottom:20px;" onclick="submitGMProposal()">Kirim Usulan Produk</button>
+
+                        <hr style="margin: 15px 0; border: 1px solid #e2e8f0;">
+
+                        <h4>🔄 Usulkan Perubahan Divisi / Role Karyawan ke CEO</h4>
+                        <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
+                            <label>Pilih Karyawan:</label>
+                            <select id="gm-transfer-staff">
+                                <option value="">-- Pilih Karyawan --</option>
+                            </select>
+                            <label>Divisi / Role Baru Tujuan:</label>
+                            <select id="gm-transfer-role">
+                                <option value="Staff Marketing">Staff Marketing</option>
+                                <option value="Staff Produksi">Staff Produksi</option>
+                                <option value="General Manager">General Manager</option>
+                                <option value="Direktur Keuangan">Direktur Keuangan</option>
+                            </select>
+                            <button class="btn btn-warning" onclick="submitRoleProposal()">Kirim Usulan Perpindahan Divisi</button>
+                        </div>
                     </div>
 
                     <div id="workspace-finance" class="hidden">
@@ -1150,9 +1177,8 @@
                 ipoArea.innerHTML = `<span class="badge" style="background:#dcfce7; color:#166534; font-size:0.9rem; padding:6px 12px;">✅ Go Public (Tbk)</span><p style="font-size:0.8rem; margin-top:5px;">Harga Saham: <strong>Rp ${(myComp.stockPrice || 0).toLocaleString('id-ID')}/lbr</strong></p>`;
                 if (ceoCorpActions) ceoCorpActions.classList.remove('hidden');
 
-                // Populate buyback user target dropdown
                 const bbUserSelect = document.getElementById('buyback-target-user');
-                bbUserSelect.innerHTML = '<option value="">-- Pilih Pemegang Saham --</option>';
+                bbUserSelect.innerHTML = '<option value="">-- Pilih User --</option>';
                 for (let uName in db.users) {
                     let uObj = db.users[uName];
                     if (uObj.portfolio && uObj.portfolio[myComp.id] && uObj.portfolio[myComp.id] > 0) {
@@ -1176,6 +1202,24 @@
             document.getElementById('salary-fin').value = myComp.salaries['Direktur Keuangan'] || 0;
             document.getElementById('salary-mkt').value = myComp.salaries['Staff Marketing'] || 0;
             document.getElementById('salary-prod').value = myComp.salaries['Staff Produksi'] || 0;
+
+            // RENDER ROLE PROPOSALS FROM GM
+            const tbodyRoleProp = document.getElementById('table-role-proposals');
+            tbodyRoleProp.innerHTML = "";
+            if (myComp.roleProposals && myComp.roleProposals.length > 0) {
+                myComp.roleProposals.forEach((rProp, idx) => {
+                    tbodyRoleProp.innerHTML += `
+                        <tr>
+                            <td><strong>${rProp.staffName}</strong></td>
+                            <td><span class="badge">${rProp.oldRole}</span></td>
+                            <td><span class="badge" style="background:#e0f2fe; color:#0369a1;">${rProp.newRole}</span></td>
+                            <td><button class="btn btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="approveRoleProposal(${idx})">Setujui Perubahan</button></td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbodyRoleProp.innerHTML = `<tr><td colspan="4" style="color:var(--secondary)">Tidak ada usulan perubahan divisi dari GM.</td></tr>`;
+            }
 
             const tbodyBonus = document.getElementById('table-bonus-proposals');
             tbodyBonus.innerHTML = "";
@@ -1239,7 +1283,7 @@
         db.companies[compId] = {
             id: compId, name: name, ceoName: db.currentUser.name, day: 1, month: 1,
             salaries: { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 },
-            treasury: 2000000, products: [], staff: [], applicants: [], gmProposals: [], bonusProposals: [], transactions: [],
+            treasury: 2000000, products: [], staff: [], applicants: [], gmProposals: [], bonusProposals: [], roleProposals: [], transactions: [],
             isPublic: false, stockPrice: 0, totalShares: 10000, availableShares: 5000, lastShareIssueDay: 1
         };
         logCompanyTransaction(db.companies[compId], 'MASUK', 2000000, 'Modal Awal Pendirian Perusahaan');
@@ -1267,7 +1311,6 @@
         renderCEO();
     }
 
-    // NEW FEATURE: ISSUE NEW SHARES (REQUIREMENT: MIN 30 DAYS FROM LAST ISSUE)
     async function issueNewShares() {
         let myComp = getMyCompany();
         if (!myComp.isPublic) return alert("Perusahaan belum Go Public (IPO)!");
@@ -1294,7 +1337,6 @@
         renderCEO();
     }
 
-    // NEW FEATURE: CREATE BUYBACK PROPOSAL FOR A SHAREHOLDER
     async function createBuybackProposal() {
         let myComp = getMyCompany();
         let targetUser = document.getElementById('buyback-target-user').value;
@@ -1455,6 +1497,28 @@
         renderCEO();
     }
 
+    // APPROVE ROLE TRANSFER PROPOSAL (CEO ACTION)
+    async function approveRoleProposal(idx) {
+        let myComp = getMyCompany();
+        let prop = myComp.roleProposals[idx];
+        let staffUser = db.users[prop.staffName];
+
+        if (staffUser) {
+            staffUser.role = prop.newRole;
+        }
+
+        let compStaffObj = myComp.staff.find(s => s.name === prop.staffName);
+        if (compStaffObj) {
+            compStaffObj.role = prop.newRole;
+        }
+
+        myComp.roleProposals.splice(idx, 1);
+        logCompanyTransaction(myComp, 'MASUK', 0, `Persetujuan Perubahan Divisi ${prop.staffName} dari ${prop.oldRole} ke ${prop.newRole}`);
+        await saveGame();
+        alert(`Perubahan divisi untuk ${prop.staffName} menjadi ${prop.newRole} berhasil disetujui!`);
+        renderCEO();
+    }
+
     async function hireUser(compId, appName) {
         let comp = db.companies[compId];
         let app = db.users[appName];
@@ -1517,6 +1581,7 @@
 
             if (db.currentUser.role === 'General Manager') {
                 document.getElementById('workspace-gm').classList.remove('hidden');
+                renderGMWorkspace(activeComp);
             } else if (db.currentUser.role === 'Direktur Keuangan') {
                 document.getElementById('workspace-finance').classList.remove('hidden');
                 renderFinanceWorkspace(activeComp);
@@ -1573,9 +1638,47 @@
         if (!comp.gmProposals) comp.gmProposals = [];
         comp.gmProposals.push({ gmName: db.currentUser.name, name: name, cost: cost });
         await saveGame();
-        alert("Usulan dikirim ke CEO.");
+        alert("Usulan produk dikirim ke CEO.");
         document.getElementById('gm-prod-name').value = "";
         document.getElementById('gm-prod-cost').value = "";
+    }
+
+    // GM WORKSPACE DROPDOWN RENDER & SUBMIT ROLE TRANSFER
+    function renderGMWorkspace(comp) {
+        const staffSelect = document.getElementById('gm-transfer-staff');
+        staffSelect.innerHTML = '<option value="">-- Pilih Karyawan --</option>';
+        if (comp.staff) {
+            comp.staff.forEach(st => {
+                if (st.name !== db.currentUser.name) {
+                    staffSelect.innerHTML += `<option value="${st.name}">${st.name} (Role Saat Ini: ${st.role})</option>`;
+                }
+            });
+        }
+    }
+
+    async function submitRoleProposal() {
+        let targetStaffName = document.getElementById('gm-transfer-staff').value;
+        let newRole = document.getElementById('gm-transfer-role').value;
+
+        if (!targetStaffName) return alert("Pilih karyawan yang ingin dipindahkan divisinya!");
+        
+        let comp = db.companies[db.currentUser.companyId];
+        let staffObj = comp.staff.find(s => s.name === targetStaffName);
+        if (!staffObj) return alert("Karyawan tidak ditemukan!");
+
+        if (staffObj.role === newRole) return alert("Karyawan sudah berada di divisi/role tersebut!");
+
+        if (!comp.roleProposals) comp.roleProposals = [];
+        comp.roleProposals.push({
+            id: 'PROP_ROLE_' + Date.now(),
+            staffName: targetStaffName,
+            oldRole: staffObj.role,
+            newRole: newRole
+        });
+
+        await saveGame();
+        alert(`Usulan perpindahan divisi untuk ${targetStaffName} menjadi ${newRole} berhasil dikirim ke CEO.`);
+        renderStaff();
     }
 
     function renderFinanceWorkspace(comp) {
@@ -1985,7 +2088,6 @@
         if (comp.stockPrice < 100) comp.stockPrice = 100;
     }
 
-    // RUPS, BUYBACK APPROVAL & CEO VOTING TAB
     function renderRUPS() {
         const container = document.getElementById('rups-access-container');
         if (!container) return;
@@ -2022,7 +2124,6 @@
 
         let html = "";
 
-        // 1. DIVIDEND PROPOSAL FORM (CEO)
         if (isCEO) {
             html += `
                 <div class="company-box" style="border: 2px solid var(--primary); background: #f8fafc; margin-bottom: 25px;">
@@ -2042,7 +2143,6 @@
             `;
         }
 
-        // 2. BUYBACK APPROVAL LIST FOR CURRENT USER (SHAREHOLDER)
         html += `<h4>📝 Tawaran Buy Back Saham dari PT (Memerlukan Persetujuan Anda)</h4>`;
         let buybackProps = db.buybackProposals || [];
         let myBuybackProps = buybackProps.filter(bb => bb.shareholderName === db.currentUser.name && bb.status === 'Pending');
@@ -2067,7 +2167,6 @@
             });
         }
 
-        // 3. CEO ELECTION PROPOSAL FORM (IPO COMPANIES)
         let publicCompanies = [];
         for (let id in db.companies) {
             let c = db.companies[id];
@@ -2099,7 +2198,6 @@
             `;
         }
 
-        // 4. RUPS DIVIDEND LIST
         html += `<h4>Daftar Agenda RUPS Dividen Aktif</h4>`;
         let activeProposals = db.rupsProposals || [];
         if (activeProposals.length === 0) {
@@ -2139,7 +2237,6 @@
             });
         }
 
-        // 5. CEO ELECTION PROPOSALS LIST
         html += `<h4 style="margin-top:30px;">Daftar Voting Dewan Direksi (Pemilihan CEO IPO)</h4>`;
         let ceoProposals = db.ceoElectionProposals || [];
         if (ceoProposals.length === 0) {
@@ -2180,7 +2277,6 @@
         container.innerHTML = html;
     }
 
-    // NEW FEATURE: RESPOND TO BUYBACK PROPOSAL (SHAREHOLDER APPROVAL)
     async function respondBuyback(index, response) {
         let bb = db.buybackProposals[index];
         let comp = db.companies[bb.compId];
