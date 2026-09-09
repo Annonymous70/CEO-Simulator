@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + RUPS</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Buyback & Saham Baru</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -179,8 +179,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10 + RUPS</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">Dilengkapi fitur Rapat Umum Pemegang Saham (RUPS) khusus CEO & Pemegang Saham, Gudang CEO, serta Bursa Saham IPO Realtime.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + Buyback & Saham Baru</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">Dilengkapi fitur Penerbitan Saham Baru (Syarat 30 Hari), Buy Back Saham dengan Approval Pemegang Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -193,9 +193,9 @@
         <div id="auth-role-section">
             <h3 style="margin-top: 16px;">Pilih Role:</h3>
             <div class="role-grid" id="role-selection">
-                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & RUPS</small></div>
+                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & Buyback</small></div>
                 <div class="role-card" data-role="General Manager" onclick="selectRole('General Manager')"><strong>General Manager</strong><br><small>Usul Produk</small></div>
-                <div class="role-card" data-role="Direktur Keuangan" onclick="selectRole('Direktur Keuangan')"><strong>Dir. Keuangan</strong><br><small>Harga Jual</small></div>
+                <div class="role-card" data-role="Direktur Keuangan" onclick="selectRole('Direktur Keuangan')"><strong>Dir. Keuangan</strong><br><small>Kas & Bonus</small></div>
                 <div class="role-card" data-role="Staff Marketing" onclick="selectRole('Staff Marketing')"><strong>Marketing & Sales</strong><br><small>Jual Produk</small></div>
                 <div class="role-card" data-role="Staff Produksi" onclick="selectRole('Staff Produksi')"><strong>Produksi</strong><br><small>Stok Inventaris</small></div>
                 <div class="role-card" data-role="Admin" onclick="selectRole('Admin')" style="border-color: var(--warning); background: #fffbeb;"><strong>👑 Admin</strong><br><small>Kontrol Penuh</small></div>
@@ -229,7 +229,7 @@
             <button class="nav-tab active" onclick="switchTab('workspace', this)">🏢 Ruang Kerja / Perusahaan</button>
             <button class="nav-tab" onclick="switchTab('marketplace', this)">🛍️ Marketplace Produk</button>
             <button class="nav-tab" onclick="switchTab('stockexchange', this)">📈 Bursa Saham (IPO)</button>
-            <button class="nav-tab" onclick="switchTab('rups', this)">🏛️ RUPS & Dividen</button>
+            <button class="nav-tab" onclick="switchTab('rups', this)">🏛️ RUPS, Buyback & Voting</button>
             <button class="nav-tab" onclick="switchTab('bank', this)">🏦 Bank & Pinjaman</button>
             <button class="nav-tab" onclick="switchTab('profile', this)">🔐 Profil & Password</button>
             <button class="nav-tab hidden" id="tab-btn-admin" onclick="switchTab('admin', this)">👑 Panel Admin</button>
@@ -328,8 +328,32 @@
                         <div style="background: #eff6ff; border: 2px solid var(--primary); padding: 15px; border-radius: 8px;">
                             <h4 style="color: var(--primary);">📈 Bursa & Valuasi IPO</h4>
                             <p>Valuasi PT: <strong id="ui-company-valuation" style="color:var(--success);">Rp 0</strong></p>
-                            <p style="font-size:0.85rem; color:var(--secondary); margin-bottom: 10px;">Min. Valuasi IPO: **Rp 100 Juta**</p>
+                            <p style="font-size:0.85rem; color:var(--secondary); margin-bottom: 10px;">Min. Valuasi IPO: Rp 100 Juta</p>
                             <div id="ipo-action-area"></div>
+                        </div>
+                    </div>
+
+                    <!-- CEO CORPORATE ACTIONS (SAHAM BARU & BUYBACK) -->
+                    <div id="ceo-corporate-actions" class="company-box hidden" style="border: 2px solid var(--warning); background: #fffbeb;">
+                        <h4 style="color: var(--warning);">⚡ Aksi Korporat (Saham Baru & Buyback)</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                            <div>
+                                <h5 style="font-size:0.9rem; color:var(--primary); margin-bottom:6px;">Penerbitan Saham Baru (Right Issue)</h5>
+                                <p style="font-size:0.8rem; color:var(--secondary); margin-bottom:8px;">Min. 30 hari dari penerbitan terakhir.</p>
+                                <button class="btn btn-primary" style="width:100%;" onclick="issueNewShares()">Terbitkan Saham Baru</button>
+                            </div>
+                            <div>
+                                <h5 style="font-size:0.9rem; color:var(--success); margin-bottom:6px;">Ajukan Buy Back Saham</h5>
+                                <label style="font-size:0.8rem;">Pilih Pemegang Saham:</label>
+                                <select id="buyback-target-user" style="margin-bottom:6px; font-size:0.85rem;">
+                                    <option value="">-- Pilih User --</option>
+                                </select>
+                                <label style="font-size:0.8rem;">Jumlah Lembar:</label>
+                                <input type="number" id="buyback-qty" placeholder="Jumlah lbr" style="margin-bottom:6px; font-size:0.85rem;" />
+                                <label style="font-size:0.8rem;">Total Harga Penawaran (Rp):</label>
+                                <input type="number" id="buyback-total-price" placeholder="Total Harga" style="margin-bottom:6px; font-size:0.85rem;" />
+                                <button class="btn btn-success" style="width:100%;" onclick="createBuybackProposal()">Kirim Tawaran Buyback</button>
+                            </div>
                         </div>
                     </div>
 
@@ -353,6 +377,14 @@
                             <button class="btn btn-primary" style="width:100%;" onclick="ceoDepositCapital()">Setor dari Dompet Pribadi</button>
                         </div>
                     </div>
+
+                    <hr style="margin: 16px 0; border: 1px solid #e2e8f0;">
+
+                    <h4>Usulan Bonus Karyawan dari Direktur Keuangan</h4>
+                    <table>
+                        <thead><tr><th>Direktur Pengusul</th><th>Karyawan Penerima</th><th>Nominal Bonus</th><th>Alasan</th><th>Aksi CEO</th></tr></thead>
+                        <tbody id="table-bonus-proposals"></tbody>
+                    </table>
 
                     <hr style="margin: 16px 0; border: 1px solid #e2e8f0;">
 
@@ -397,7 +429,6 @@
                         Gaji Anda: <strong id="ui-staff-salary" style="color:var(--success);">Rp 0 / hari</strong>
                     </p>
                     
-                    <!-- GM -->
                     <div id="workspace-gm" class="hidden">
                         <h4>Ajukan Produk Baru ke CEO</h4>
                         <input type="text" id="gm-prod-name" placeholder="Nama Produk" />
@@ -405,16 +436,33 @@
                         <button class="btn btn-warning" onclick="submitGMProposal()">Kirim Usulan</button>
                     </div>
 
-                    <!-- FINANCE -->
                     <div id="workspace-finance" class="hidden">
                         <h4>Direktur Keuangan: Tetapkan Harga Jual Produk</h4>
                         <table>
                             <thead><tr><th>Produk</th><th>Biaya Dasar</th><th>Set Harga Jual</th><th>Margin</th><th>Aksi</th></tr></thead>
                             <tbody id="table-finance-products"></tbody>
                         </table>
+
+                        <h4 style="margin-top: 30px;">🎁 Ajukan Bonus Karyawan ke CEO</h4>
+                        <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
+                            <label>Pilih Karyawan Penerima Bonus:</label>
+                            <select id="fin-bonus-target">
+                                <option value="">-- Pilih Karyawan --</option>
+                            </select>
+                            <label>Nominal Bonus (Rp):</label>
+                            <input type="number" id="fin-bonus-amount" placeholder="Nominal Bonus" />
+                            <label>Keterangan / Alasan:</label>
+                            <input type="text" id="fin-bonus-reason" placeholder="Alasan pemberian bonus..." />
+                            <button class="btn btn-warning" onclick="submitBonusProposal()">Kirim Usulan Bonus ke CEO</button>
+                        </div>
+
+                        <h4 style="margin-top: 30px;">📊 Laporan Arus Kas Perusahaan (Uang Masuk & Uang Keluar)</h4>
+                        <table>
+                            <thead><tr><th>Hari</th><th>Jenis Arus</th><th>Nominal</th><th>Keterangan Transaksi</th></tr></thead>
+                            <tbody id="table-cashflow-logs"></tbody>
+                        </table>
                     </div>
 
-                    <!-- MARKETING & SALES -->
                     <div id="workspace-marketing" class="hidden">
                         <h4>Staff Marketing & Sales: Penjualan Produk</h4>
                         <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:15px;">Anda dapat memasarkan produk perusahaan ke Marketplace atau melakukan **Penjualan Langsung (Direct Sales)** ke user lain.</p>
@@ -441,7 +489,6 @@
                         </table>
                     </div>
 
-                    <!-- PRODUCTION -->
                     <div id="workspace-production" class="hidden">
                         <h4>Staff Produksi: Kapasitas & Inventaris Stok Perusahaan</h4>
                         <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
@@ -454,7 +501,6 @@
                         </table>
                     </div>
 
-                    <!-- OTHER STAFF -->
                     <div id="workspace-others" class="hidden">
                         <p style="color: var(--secondary);">Katalog Produk Perusahaan & Stok:</p>
                         <ul id="list-other-products" style="margin-left: 20px; margin-top: 10px;"></ul>
@@ -492,11 +538,11 @@
             </div>
         </div>
 
-        <!-- TAB 4: RUPS & DIVIDEN -->
+        <!-- TAB 4: RUPS, BUYBACK & VOTING CEO -->
         <div id="tab-rups" class="tab-content hidden">
             <div class="card">
-                <h3>🏛️ Rapat Umum Pemegang Saham (RUPS) & Keputusan Dividen</h3>
-                <p style="color: var(--secondary); margin-bottom: 20px;">Hanya dapat diakses dan dihadiri oleh **CEO** dan **Para Pemegang Saham** perusahaan terkait untuk memutuskan besaran dividen.</p>
+                <h3>🏛️ RUPS, Dividen, Approval Buyback & Voting CEO</h3>
+                <p style="color: var(--secondary); margin-bottom: 20px;">Tempat para pemegang saham memberikan suara RUPS, persetujuan tawaran Buyback saham, dan pemilihan CEO baru.</p>
                 
                 <div id="rups-access-container"></div>
             </div>
@@ -592,6 +638,8 @@
         marketProducts: [], 
         loans: [],
         rupsProposals: [],      
+        ceoElectionProposals: [],
+        buybackProposals: [],
         adminCode: "Bisnis2026"
     };
     let selectedRole = "";
@@ -616,6 +664,8 @@
                 db.marketProducts = parsed.marketProducts || [];
                 db.loans = parsed.loans || [];
                 db.rupsProposals = parsed.rupsProposals || [];
+                db.ceoElectionProposals = parsed.ceoElectionProposals || [];
+                db.buybackProposals = parsed.buybackProposals || [];
                 db.adminCode = parsed.adminCode || "Bisnis2026";
 
                 if (db.currentUser && db.users[db.currentUser.name]) {
@@ -626,7 +676,7 @@
             }
             renderDebugUsers();
             if (db.currentUser && !document.getElementById('screen-dashboard').classList.contains('hidden')) {
-                if (db.currentUser.companyId && !db.companies[db.currentUser.companyId]) {
+                if (db.currentUser.companyId && db.currentUser.role !== 'CEO' && !db.companies[db.currentUser.companyId]) {
                     db.currentUser.companyId = null;
                 }
                 let activeComp = db.currentUser.companyId ? db.companies[db.currentUser.companyId] : null;
@@ -651,6 +701,8 @@
                 marketProducts: db.marketProducts,
                 loans: db.loans,
                 rupsProposals: db.rupsProposals,
+                ceoElectionProposals: db.ceoElectionProposals,
+                buybackProposals: db.buybackProposals,
                 adminCode: db.adminCode
             };
             await database.ref('gameData').set(saveData);
@@ -664,6 +716,17 @@
     window.onload = function() {
         initFirebaseSync();
     };
+
+    function logCompanyTransaction(comp, type, amount, desc) {
+        if (!comp.transactions) comp.transactions = [];
+        comp.transactions.unshift({
+            day: comp.day || 1,
+            type: type, 
+            amount: amount,
+            desc: desc
+        });
+        if (comp.transactions.length > 50) comp.transactions.pop();
+    }
 
     function switchAuthMode(mode) {
         authMode = mode;
@@ -830,7 +893,7 @@
 
         updateTransferDropdown();
 
-        if (db.currentUser.companyId && !db.companies[db.currentUser.companyId]) {
+        if (db.currentUser.companyId && db.currentUser.role !== 'CEO' && !db.companies[db.currentUser.companyId]) {
             db.currentUser.companyId = null;
         }
 
@@ -855,7 +918,7 @@
 
         if (!db.currentUser) return;
 
-        if (db.currentUser.companyId && !db.companies[db.currentUser.companyId]) {
+        if (db.currentUser.companyId && db.currentUser.role !== 'CEO' && !db.companies[db.currentUser.companyId]) {
             db.currentUser.companyId = null;
         }
 
@@ -871,7 +934,6 @@
         }
     }
 
-    // ADMIN VIEW & CONTROLS
     function renderAdmin() {
         const selUserPwd = document.getElementById('admin-target-user-pwd');
         selUserPwd.innerHTML = '<option value="">-- Pilih User --</option>';
@@ -973,6 +1035,7 @@
             let comp = db.companies[targetId];
             if (comp) {
                 comp.treasury += amount;
+                logCompanyTransaction(comp, 'MASUK', amount, `Top-up Saldo oleh Admin`);
                 alert(`Berhasil menambahkan kas sebesar Rp ${amount.toLocaleString('id-ID')} ke perusahaan ${comp.name}.`);
             }
         }
@@ -990,7 +1053,10 @@
                 db.users[loan.applicantName].wallet += loan.amount;
             } else if (loan.targetType === 'Company') {
                 let comp = db.companies[loan.companyId];
-                if (comp) comp.treasury += loan.amount;
+                if (comp) {
+                    comp.treasury += loan.amount;
+                    logCompanyTransaction(comp, 'MASUK', loan.amount, `Pencairan Pinjaman Bank`);
+                }
             }
             alert(`Pinjaman sebesar Rp ${loan.amount.toLocaleString('id-ID')} disetujui! (Bunga 5%/bulan berlaku).`);
         } else {
@@ -1000,7 +1066,6 @@
         renderAdmin();
     }
 
-    // PROFILE PASSWORD UPDATE
     function loadProfileData() {
         document.getElementById('profile-name').value = db.currentUser.name;
         document.getElementById('profile-role').value = db.currentUser.role;
@@ -1016,7 +1081,6 @@
         loadProfileData();
     }
 
-    // P2P TRANSFER
     async function executeTransfer() {
         let targetName = document.getElementById('transfer-target-user').value;
         let amount = parseFloat(document.getElementById('transfer-amount').value);
@@ -1035,7 +1099,6 @@
         openDashboard();
     }
 
-    // CEO LOGIC, WAREHOUSE & IPO
     function getMyCompany() {
         for (let id in db.companies) {
             if (db.companies[id].ceoName === db.currentUser.name) return db.companies[id];
@@ -1081,9 +1144,23 @@
             document.getElementById('ui-company-valuation').innerText = `Rp ${valuation.toLocaleString('id-ID')}`;
             
             const ipoArea = document.getElementById('ipo-action-area');
+            const ceoCorpActions = document.getElementById('ceo-corporate-actions');
+
             if (myComp.isPublic) {
                 ipoArea.innerHTML = `<span class="badge" style="background:#dcfce7; color:#166534; font-size:0.9rem; padding:6px 12px;">✅ Go Public (Tbk)</span><p style="font-size:0.8rem; margin-top:5px;">Harga Saham: <strong>Rp ${(myComp.stockPrice || 0).toLocaleString('id-ID')}/lbr</strong></p>`;
+                if (ceoCorpActions) ceoCorpActions.classList.remove('hidden');
+
+                // Populate buyback user target dropdown
+                const bbUserSelect = document.getElementById('buyback-target-user');
+                bbUserSelect.innerHTML = '<option value="">-- Pilih Pemegang Saham --</option>';
+                for (let uName in db.users) {
+                    let uObj = db.users[uName];
+                    if (uObj.portfolio && uObj.portfolio[myComp.id] && uObj.portfolio[myComp.id] > 0) {
+                        bbUserSelect.innerHTML += `<option value="${uName}">${uName} (${uObj.portfolio[myComp.id]} lbr)</option>`;
+                    }
+                }
             } else {
+                if (ceoCorpActions) ceoCorpActions.classList.add('hidden');
                 if (valuation >= 100000000) {
                     ipoArea.innerHTML = `<button class="btn btn-success" onclick="executeIPO('${myComp.id}')">🚀 Ajukan IPO Sekarang</button> <p style="font-size:0.8rem; color:var(--success); margin-top:5px;">Syarat terpenuhi! Valuasi >= Rp 100 Juta.</p>`;
                 } else {
@@ -1100,6 +1177,25 @@
             document.getElementById('salary-mkt').value = myComp.salaries['Staff Marketing'] || 0;
             document.getElementById('salary-prod').value = myComp.salaries['Staff Produksi'] || 0;
 
+            const tbodyBonus = document.getElementById('table-bonus-proposals');
+            tbodyBonus.innerHTML = "";
+            if (myComp.bonusProposals) {
+                myComp.bonusProposals.forEach((bProp, idx) => {
+                    tbodyBonus.innerHTML += `
+                        <tr>
+                            <td>${bProp.financeName}</td>
+                            <td><strong>${bProp.targetStaff}</strong></td>
+                            <td style="color:var(--success); font-weight:bold;">Rp ${bProp.amount.toLocaleString('id-ID')}</td>
+                            <td>${bProp.reason}</td>
+                            <td><button class="btn btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="approveBonusProposal(${idx})">Setujui Bonus</button></td>
+                        </tr>
+                    `;
+                });
+            }
+            if (!myComp.bonusProposals || myComp.bonusProposals.length === 0) {
+                tbodyBonus.innerHTML = `<tr><td colspan="5" style="color:var(--secondary)">Tidak ada usulan bonus karyawan.</td></tr>`;
+            }
+
             const tbodyProp = document.getElementById('table-gm-proposals');
             tbodyProp.innerHTML = "";
             if (myComp.gmProposals) {
@@ -1107,7 +1203,7 @@
                     tbodyProp.innerHTML += `<tr><td>${prop.gmName}</td><td>${prop.name}</td><td>Rp ${prop.cost.toLocaleString('id-ID')}</td><td><button class="btn btn-success" onclick="approveGMProposal(${idx})">Setujui</button></td></tr>`;
                 });
             }
-            if(!myComp.gmProposals || myComp.gmProposals.length === 0) tbodyProp.innerHTML = `<tr><td colspan="4" style="color:var(--secondary)">Tidak ada usulan.</td></tr>`;
+            if(!myComp.gmProposals || myComp.gmProposals.length === 0) tbodyProp.innerHTML = `<tr><td colspan="4" style="color:var(--secondary)">Tidak ada usulan produk.</td></tr>`;
 
             const tbodyApp = document.getElementById('table-applicants');
             tbodyApp.innerHTML = "";
@@ -1143,9 +1239,10 @@
         db.companies[compId] = {
             id: compId, name: name, ceoName: db.currentUser.name, day: 1, month: 1,
             salaries: { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 },
-            treasury: 2000000, products: [], staff: [], applicants: [], gmProposals: [], 
-            isPublic: false, stockPrice: 0, totalShares: 10000, availableShares: 5000
+            treasury: 2000000, products: [], staff: [], applicants: [], gmProposals: [], bonusProposals: [], transactions: [],
+            isPublic: false, stockPrice: 0, totalShares: 10000, availableShares: 5000, lastShareIssueDay: 1
         };
+        logCompanyTransaction(db.companies[compId], 'MASUK', 2000000, 'Modal Awal Pendirian Perusahaan');
         db.currentUser.companyId = compId;
         db.currentUser.lastDayProcessed = 1;
         await saveGame();
@@ -1160,11 +1257,76 @@
         
         comp.isPublic = true;
         comp.stockPrice = Math.max(1000, Math.round(val / comp.totalShares));
+        comp.lastShareIssueDay = comp.day || 1;
         let ipoInjection = val * 0.20;
         comp.treasury += ipoInjection;
+        logCompanyTransaction(comp, 'MASUK', ipoInjection, 'Suntikan Dana Injeksi Go Public (IPO)');
 
         await saveGame();
         alert(`🎉 Selamat! Perusahaan ${comp.name} sukses IPO (Go Public / Tbk)!`);
+        renderCEO();
+    }
+
+    // NEW FEATURE: ISSUE NEW SHARES (REQUIREMENT: MIN 30 DAYS FROM LAST ISSUE)
+    async function issueNewShares() {
+        let myComp = getMyCompany();
+        if (!myComp.isPublic) return alert("Perusahaan belum Go Public (IPO)!");
+        
+        let lastIssue = myComp.lastShareIssueDay || 1;
+        let currentDay = myComp.day || 1;
+        let diffDays = currentDay - lastIssue;
+
+        if (diffDays < 30) {
+            return alert(`Belum memenuhi syarat! Minimal 30 hari dari penerbitan saham terakhir. Sisa waktu: ${30 - diffDays} hari.`);
+        }
+
+        let qtyStr = prompt("Masukkan jumlah lembar saham baru yang ingin diterbitkan:", "1000");
+        let qty = parseInt(qtyStr);
+        if (isNaN(qty) || qty <= 0) return alert("Jumlah lembar saham tidak valid!");
+
+        myComp.totalShares += qty;
+        myComp.availableShares += qty;
+        myComp.lastShareIssueDay = currentDay;
+
+        logCompanyTransaction(myComp, 'MASUK', 0, `Penerbitan ${qty} lembar saham baru (Right Issue)`);
+        await saveGame();
+        alert(`Berhasil menerbitkan ${qty} lembar saham baru! Saham masuk ke free float bursa.`);
+        renderCEO();
+    }
+
+    // NEW FEATURE: CREATE BUYBACK PROPOSAL FOR A SHAREHOLDER
+    async function createBuybackProposal() {
+        let myComp = getMyCompany();
+        let targetUser = document.getElementById('buyback-target-user').value;
+        let qty = parseInt(document.getElementById('buyback-qty').value);
+        let totalPrice = parseFloat(document.getElementById('buyback-total-price').value);
+
+        if (!targetUser) return alert("Pilih pemegang saham target!");
+        if (isNaN(qty) || qty <= 0) return alert("Jumlah lembar saham tidak valid!");
+        if (isNaN(totalPrice) || totalPrice <= 0) return alert("Total harga tawaran tidak valid!");
+
+        let uObj = db.users[targetUser];
+        let userShares = (uObj.portfolio && uObj.portfolio[myComp.id]) || 0;
+        if (userShares < qty) return alert(`Pemegang saham tersebut hanya memiliki ${userShares} lembar saham di PT ini!`);
+
+        if (myComp.treasury < totalPrice) return alert(`Kas PT tidak mencukupi untuk membayar buyback sebesar Rp ${totalPrice.toLocaleString('id-ID')}!`);
+
+        if (!db.buybackProposals) db.buybackProposals = [];
+        db.buybackProposals.push({
+            id: 'BB_' + Date.now(),
+            compId: myComp.id,
+            compName: myComp.name,
+            ceoName: db.currentUser.name,
+            shareholderName: targetUser,
+            qty: qty,
+            totalPrice: totalPrice,
+            status: 'Pending'
+        });
+
+        document.getElementById('buyback-qty').value = "";
+        document.getElementById('buyback-total-price').value = "";
+        await saveGame();
+        alert(`Tawaran Buyback berhasil dikirim ke ${targetUser} untuk menunggu persetujuan (approval).`);
         renderCEO();
     }
 
@@ -1187,6 +1349,7 @@
         if(myComp.treasury < amount) return alert("Kas tidak cukup!");
         myComp.treasury -= amount;
         db.currentUser.wallet += amount;
+        logCompanyTransaction(myComp, 'KELUAR', amount, `Penarikan Keuntungan oleh CEO (${db.currentUser.name})`);
         await saveGame();
         alert(`Berhasil menarik Rp ${amount.toLocaleString('id-ID')} ke dompet pribadi.`);
         document.getElementById('ceo-withdraw-amount').value = "";
@@ -1200,6 +1363,7 @@
         if(db.currentUser.wallet < amount) return alert("Saldo dompet tidak cukup!");
         db.currentUser.wallet -= amount;
         myComp.treasury += amount;
+        logCompanyTransaction(myComp, 'MASUK', amount, `Setor Modal oleh CEO (${db.currentUser.name})`);
         await saveGame();
         alert(`Berhasil menyetor Rp ${amount.toLocaleString('id-ID')} ke Kas PT.`);
         document.getElementById('ceo-deposit-amount').value = "";
@@ -1215,6 +1379,7 @@
         if (myComp.treasury < totalSal) return alert(`Kas PT tidak cukup untuk bayar gaji total Rp ${totalSal.toLocaleString('id-ID')}!`);
 
         myComp.treasury -= totalSal;
+        logCompanyTransaction(myComp, 'KELUAR', totalSal, `Pembayaran Gaji Karyawan Hari ke-${myComp.day || 1}`);
         myComp.day = (myComp.day || 1) + 1;
 
         if (myComp.isPublic) {
@@ -1272,6 +1437,24 @@
         renderCEO();
     }
 
+    async function approveBonusProposal(idx) {
+        let myComp = getMyCompany();
+        let bProp = myComp.bonusProposals[idx];
+        if (myComp.treasury < bProp.amount) return alert("Kas perusahaan tidak cukup untuk membayar bonus ini!");
+
+        let targetStaffUser = db.users[bProp.targetStaff];
+        if (!targetStaffUser) return alert("Karyawan tujuan tidak ditemukan!");
+
+        myComp.treasury -= bProp.amount;
+        targetStaffUser.wallet += bProp.amount;
+        logCompanyTransaction(myComp, 'KELUAR', bProp.amount, `Pembayaran Bonus Karyawan (${bProp.targetStaff}): ${bProp.reason}`);
+        
+        myComp.bonusProposals.splice(idx, 1);
+        await saveGame();
+        alert(`Bonus sebesar Rp ${bProp.amount.toLocaleString('id-ID')} berhasil dicairkan kepada ${bProp.targetStaff}!`);
+        renderCEO();
+    }
+
     async function hireUser(compId, appName) {
         let comp = db.companies[compId];
         let app = db.users[appName];
@@ -1299,16 +1482,15 @@
         }
     }
 
-    // STAFF / GM / MARKETING SALES
     function renderStaff() {
         const market = document.getElementById('job-market');
         const workspace = document.getElementById('staff-workspace');
         
-        if (db.currentUser.companyId && !db.companies[db.currentUser.companyId]) {
+        if (db.currentUser.companyId && db.currentUser.role !== 'CEO' && !db.companies[db.currentUser.companyId]) {
             db.currentUser.companyId = null;
         }
 
-        if (db.currentUser.companyId) {
+        if (db.currentUser.companyId && db.currentUser.role !== 'CEO') {
             let activeComp = db.companies[db.currentUser.companyId];
             if (!activeComp) {
                 workspace.classList.add('hidden');
@@ -1337,7 +1519,7 @@
                 document.getElementById('workspace-gm').classList.remove('hidden');
             } else if (db.currentUser.role === 'Direktur Keuangan') {
                 document.getElementById('workspace-finance').classList.remove('hidden');
-                renderFinanceTable(activeComp);
+                renderFinanceWorkspace(activeComp);
             } else if (db.currentUser.role === 'Staff Marketing') {
                 document.getElementById('workspace-marketing').classList.remove('hidden');
                 renderMarketingWorkspace(activeComp);
@@ -1396,7 +1578,7 @@
         document.getElementById('gm-prod-cost').value = "";
     }
 
-    function renderFinanceTable(comp) {
+    function renderFinanceWorkspace(comp) {
         const tbody = document.getElementById('table-finance-products');
         tbody.innerHTML = "";
         if (comp.products) {
@@ -1406,6 +1588,37 @@
             });
         }
         if(!comp.products || comp.products.length === 0) tbody.innerHTML = `<tr><td colspan="5" style="color:var(--secondary)">Belum ada produk.</td></tr>`;
+
+        const bonusTargetSelect = document.getElementById('fin-bonus-target');
+        bonusTargetSelect.innerHTML = '<option value="">-- Pilih Karyawan --</option>';
+        if (comp.staff) {
+            comp.staff.forEach(st => {
+                bonusTargetSelect.innerHTML += `<option value="${st.name}">${st.name} (${st.role})</option>`;
+            });
+        }
+
+        const tbodyLogs = document.getElementById('table-cashflow-logs');
+        tbodyLogs.innerHTML = "";
+        if (comp.transactions) {
+            comp.transactions.forEach(tx => {
+                let typeBadge = tx.type === 'MASUK' ? 
+                    `<span class="badge" style="background:#dcfce7; color:#166534;">Uang Masuk</span>` : 
+                    `<span class="badge" style="background:#fee2e2; color:#991b1b;">Uang Keluar</span>`;
+                let amountColor = tx.type === 'MASUK' ? 'var(--success)' : 'var(--danger)';
+
+                tbodyLogs.innerHTML += `
+                    <tr>
+                        <td>Hari ke-${tx.day}</td>
+                        <td>${typeBadge}</td>
+                        <td style="font-weight:bold; color:${amountColor};">Rp ${tx.amount.toLocaleString('id-ID')}</td>
+                        <td>${tx.desc}</td>
+                    </tr>
+                `;
+            });
+        }
+        if (!comp.transactions || comp.transactions.length === 0) {
+            tbodyLogs.innerHTML = `<tr><td colspan="4" style="color:var(--secondary)">Belum ada riwayat transaksi keuangan.</td></tr>`;
+        }
     }
 
     async function savePrice(compId, prodId) {
@@ -1416,8 +1629,35 @@
             p.price = price;
             await saveGame();
             alert("Harga jual berhasil disimpan.");
-            renderFinanceTable(comp);
+            renderFinanceWorkspace(comp);
         }
+    }
+
+    async function submitBonusProposal() {
+        let targetStaff = document.getElementById('fin-bonus-target').value;
+        let amount = parseFloat(document.getElementById('fin-bonus-amount').value);
+        let reason = document.getElementById('fin-bonus-reason').value.trim();
+
+        if (!targetStaff) return alert("Pilih karyawan penerima bonus!");
+        if (isNaN(amount) || amount <= 0) return alert("Masukkan nominal bonus yang valid!");
+        if (!reason) return alert("Masukkan alasan / keterangan pemberian bonus!");
+
+        let comp = db.companies[db.currentUser.companyId];
+        if (!comp.bonusProposals) comp.bonusProposals = [];
+
+        comp.bonusProposals.push({
+            id: 'BONUS_' + Date.now(),
+            financeName: db.currentUser.name,
+            targetStaff: targetStaff,
+            amount: amount,
+            reason: reason
+        });
+
+        document.getElementById('fin-bonus-amount').value = "";
+        document.getElementById('fin-bonus-reason').value = "";
+        await saveGame();
+        alert("Usulan bonus karyawan berhasil dikirim ke CEO untuk disetujui.");
+        renderFinanceWorkspace(comp);
     }
 
     function renderMarketingWorkspace(comp) {
@@ -1474,6 +1714,7 @@
         buyer.wallet -= totalPrice;
         p.stock -= qty;
         comp.treasury += totalPrice;
+        logCompanyTransaction(comp, 'MASUK', totalPrice, `Penjualan Langsung ${qty}x ${p.name} ke ${buyerName}`);
 
         if (comp.isPublic) {
             fluctuationStockPriceOnActivity(comp, 1.05);
@@ -1558,6 +1799,7 @@
         if (comp.treasury < hpp) return alert(`Kas PT tidak cukup untuk HPP produksi sebesar Rp ${hpp.toLocaleString('id-ID')}!`);
 
         comp.treasury -= hpp;
+        logCompanyTransaction(comp, 'KELUAR', hpp, `Biaya HPP Produksi 10x ${p.name}`);
         db.currentUser.producedToday += 10;
         p.stock = (p.stock || 0) + 10;
         p.totalProduced = (p.totalProduced || 0) + 10;
@@ -1571,7 +1813,6 @@
         renderProductionWorkspace(comp);
     }
 
-    // MARKETPLACE SHOPPING TAB
     function renderMarketplace() {
         const container = document.getElementById('marketplace-container');
         if (!container) return;
@@ -1617,6 +1858,7 @@
         db.currentUser.wallet -= price;
         if (comp) {
             comp.treasury += companyRevenue;
+            logCompanyTransaction(comp, 'MASUK', companyRevenue, `Penjualan Marketplace 1x ${name} (Netto setelah pajak)`);
             if (comp.isPublic) {
                 fluctuationStockPriceOnActivity(comp, 1.04);
             }
@@ -1635,7 +1877,6 @@
         if (walletEl) walletEl.innerText = `Saldo: Rp ${db.currentUser.wallet.toLocaleString('id-ID')}`;
     }
 
-    // STOCK EXCHANGE TAB
     function renderStockExchange() {
         const tbodyMarket = document.getElementById('stock-market-table');
         if (!tbodyMarket) return;
@@ -1703,6 +1944,7 @@
         db.currentUser.wallet -= totalPrice;
         comp.availableShares -= qty;
         comp.treasury += totalPrice;
+        logCompanyTransaction(comp, 'MASUK', totalPrice, `Penjualan Saham Perdana ke ${db.currentUser.name} (${qty} lbr)`);
 
         if (!db.currentUser.portfolio) db.currentUser.portfolio = {};
         db.currentUser.portfolio[compId] = (db.currentUser.portfolio[compId] || 0) + qty;
@@ -1743,13 +1985,12 @@
         if (comp.stockPrice < 100) comp.stockPrice = 100;
     }
 
-    // RUPS & DIVIDEND LOGIC (RESTRICTED TO CEO & SHAREHOLDERS)
+    // RUPS, BUYBACK APPROVAL & CEO VOTING TAB
     function renderRUPS() {
         const container = document.getElementById('rups-access-container');
         if (!container) return;
         container.innerHTML = "";
 
-        // Check if user is CEO of any company OR holds shares in any public company
         let isCEO = false;
         let userCompanies = [];
         for (let id in db.companies) {
@@ -1773,8 +2014,7 @@
             container.innerHTML = `
                 <div style="background:#fef2f2; border:1px solid var(--danger); padding:20px; border-radius:8px; text-align:center;">
                     <h4 style="color:var(--danger);">⛔ Akses Ditolak</h4>
-                    <p style="color:var(--secondary);">Menu Rapat Umum Pemegang Saham (RUPS) hanya dapat diakses oleh **CEO Perusahaan** atau **Pemegang Saham** aktif.</p>
-                    <p style="margin-top:10px; font-size:0.9rem;">Silakan beli saham di Bursa Saham atau dirikan perusahaan terlebih dahulu.</p>
+                    <p style="color:var(--secondary);">Menu ini hanya dapat diakses oleh **CEO Perusahaan** atau **Pemegang Saham** aktif.</p>
                 </div>
             `;
             return;
@@ -1782,13 +2022,11 @@
 
         let html = "";
 
-        // If user is CEO, show form to propose RUPS dividend
+        // 1. DIVIDEND PROPOSAL FORM (CEO)
         if (isCEO) {
             html += `
                 <div class="company-box" style="border: 2px solid var(--primary); background: #f8fafc; margin-bottom: 25px;">
                     <h4 style="color: var(--primary);">📢 Buat Agenda RUPS (Usulan Pembagian Dividen)</h4>
-                    <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:12px;">Sebagai CEO, Anda dapat mengajukan rapat untuk membagikan sebagian Kas Perusahaan sebagai dividen kepada pemegang saham.</p>
-                    
                     <label>Pilih Perusahaan Anda:</label>
                     <select id="rups-prop-comp">
             `;
@@ -1804,11 +2042,68 @@
             `;
         }
 
-        html += `<h4>Daftar Agenda RUPS & Voting Aktif</h4>`;
-        
+        // 2. BUYBACK APPROVAL LIST FOR CURRENT USER (SHAREHOLDER)
+        html += `<h4>📝 Tawaran Buy Back Saham dari PT (Memerlukan Persetujuan Anda)</h4>`;
+        let buybackProps = db.buybackProposals || [];
+        let myBuybackProps = buybackProps.filter(bb => bb.shareholderName === db.currentUser.name && bb.status === 'Pending');
+
+        if (myBuybackProps.length === 0) {
+            html += `<p style="color:var(--secondary); margin-bottom:25px;">Tidak ada tawaran Buy Back saham aktif untuk Anda.</p>`;
+        } else {
+            myBuybackProps.forEach((bb) => {
+                let globalIdx = buybackProps.indexOf(bb);
+                html += `
+                    <div class="company-box" style="border: 2px solid var(--success); background:#f0fdf4; margin-bottom:15px;">
+                        <h4>🤝 Tawaran Buyback dari PT ${bb.compName}</h4>
+                        <p style="font-size:0.9rem;">CEO Pengaju: <strong>${bb.ceoName}</strong></p>
+                        <p style="font-size:0.9rem;">Jumlah Saham Ditawar: <strong>${bb.qty} lembar</strong></p>
+                        <p style="font-size:0.95rem; color:var(--success); font-weight:bold;">Total Harga Kompensasi: Rp ${bb.totalPrice.toLocaleString('id-ID')}</p>
+                        <div style="margin-top:10px; display:flex; gap:10px;">
+                            <button class="btn btn-success" onclick="respondBuyback(${globalIdx}, 'Accept')">✅ Setujui & Jual (Approve)</button>
+                            <button class="btn btn-danger" onclick="respondBuyback(${globalIdx}, 'Reject')">❌ Tolak Tawaran</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 3. CEO ELECTION PROPOSAL FORM (IPO COMPANIES)
+        let publicCompanies = [];
+        for (let id in db.companies) {
+            let c = db.companies[id];
+            if (c.isPublic) publicCompanies.push(c);
+        }
+
+        if (publicCompanies.length > 0 && (hasShares || isCEO)) {
+            html += `
+                <div class="company-box" style="border: 2px solid var(--warning); background: #fffbeb; margin-bottom: 25px;">
+                    <h4 style="color: var(--warning);">👔 Rapat Umum Dewan Direksi / Pemegang Saham (Voting Pemilihan CEO Baru)</h4>
+                    <label>Pilih Perusahaan IPO:</label>
+                    <select id="ceo-prop-comp">
+            `;
+            publicCompanies.forEach(c => {
+                html += `<option value="${c.id}">${c.name} (CEO Saat Ini: ${c.ceoName})</option>`;
+            });
+            html += `
+                    </select>
+                    <label>Pilih Kandidat CEO Baru (User Terdaftar):</label>
+                    <select id="ceo-prop-candidate">
+            `;
+            for (let uName in db.users) {
+                html += `<option value="${uName}">${uName} (${db.users[uName].role})</option>`;
+            }
+            html += `
+                    </select>
+                    <button class="btn btn-warning" onclick="createCeoElectionProposal()">Usulkan Voting Pemilihan CEO Baru</button>
+                </div>
+            `;
+        }
+
+        // 4. RUPS DIVIDEND LIST
+        html += `<h4>Daftar Agenda RUPS Dividen Aktif</h4>`;
         let activeProposals = db.rupsProposals || [];
         if (activeProposals.length === 0) {
-            html += `<p style="color:var(--secondary);">Belum ada agenda RUPS yang sedang berlangsung.</p>`;
+            html += `<p style="color:var(--secondary); margin-bottom:25px;">Belum ada agenda RUPS dividen yang berlangsung.</p>`;
         } else {
             activeProposals.forEach((prop, idx) => {
                 let comp = db.companies[prop.compId];
@@ -1833,22 +2128,95 @@
                 html += `
                     <div class="company-box">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4>🏛️ RUPS ${comp.name}</h4>
+                            <h4>🏛️ RUPS Dividen - ${comp.name}</h4>
                             <span class="badge" style="background:#e0f2fe; color:#0369a1;">Status: ${prop.status}</span>
                         </div>
-                        <p style="font-size:0.9rem; margin-top:6px;">CEO Pengusul: <strong>${prop.ceoName}</strong></p>
-                        <p style="font-size:0.9rem;">Total Dividen Diajukan: <strong style="color:var(--success);">Rp ${prop.totalDividend.toLocaleString('id-ID')}</strong></p>
-                        <p style="font-size:0.85rem; color:var(--secondary); margin-top:4px;">Suara Setuju: <strong>${prop.votesYes || 0}</strong> | Suara Tolak: ${prop.votesNo || 0}</p>
-                        <div style="margin-top:10px;">
-                            ${voteStatusHtml}
-                        </div>
+                        <p style="font-size:0.9rem; margin-top:6px;">Total Dividen: <strong style="color:var(--success);">Rp ${prop.totalDividend.toLocaleString('id-ID')}</strong></p>
+                        <div style="margin-top:10px;">${voteStatusHtml}</div>
                         ${executeBtn}
                     </div>
                 `;
             });
         }
 
+        // 5. CEO ELECTION PROPOSALS LIST
+        html += `<h4 style="margin-top:30px;">Daftar Voting Dewan Direksi (Pemilihan CEO IPO)</h4>`;
+        let ceoProposals = db.ceoElectionProposals || [];
+        if (ceoProposals.length === 0) {
+            html += `<p style="color:var(--secondary);">Belum ada usulan pemilihan CEO baru.</p>`;
+        } else {
+            ceoProposals.forEach((cProp, idx) => {
+                let comp = db.companies[cProp.compId];
+                if (!comp) return;
+
+                let userShares = (db.currentUser.portfolio && db.currentUser.portfolio[cProp.compId]) || 0;
+                let canVote = userShares > 0 || comp.ceoName === db.currentUser.name || db.currentUser.role === 'Admin';
+
+                let myVote = cProp.voters && cProp.voters[db.currentUser.name];
+                let voteStatusHtml = myVote ? `<span class="badge" style="background:#dcfce7; color:#166534;">Anda sudah vote: ${myVote}</span>` : 
+                    (canVote ? `
+                        <button class="btn btn-success" style="padding:4px 10px; font-size:0.8rem;" onclick="voteCeoElection(${idx}, 'Setuju')">👍 Setuju</button>
+                        <button class="btn btn-danger" style="padding:4px 10px; font-size:0.8rem;" onclick="voteCeoElection(${idx}, 'Tolak')">👎 Tolak</button>
+                    ` : `<span style="color:var(--danger); font-size:0.85rem;">Anda harus memiliki saham PT ini untuk ikut voting CEO.</span>`);
+
+                let finalizeBtn = cProp.status === 'Voting' ? `
+                    <button class="btn btn-warning" style="margin-top:10px;" onclick="finalizeCeoElection(${idx})">⚖️ Tutup Voting & Ganti CEO</button>
+                ` : "";
+
+                html += `
+                    <div class="company-box" style="border-left: 4px solid var(--warning);">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4>👔 Pemilihan CEO Baru - ${comp.name}</h4>
+                            <span class="badge" style="background:#fef3c7; color:#b45309;">Status: ${cProp.status}</span>
+                        </div>
+                        <p style="font-size:0.9rem; margin-top:6px;">Kandidat: <strong style="color:var(--primary);">${cProp.candidateName}</strong></p>
+                        <div style="margin-top:10px;">${voteStatusHtml}</div>
+                        ${finalizeBtn}
+                    </div>
+                `;
+            });
+        }
+
         container.innerHTML = html;
+    }
+
+    // NEW FEATURE: RESPOND TO BUYBACK PROPOSAL (SHAREHOLDER APPROVAL)
+    async function respondBuyback(index, response) {
+        let bb = db.buybackProposals[index];
+        let comp = db.companies[bb.compId];
+        let shareholder = db.users[bb.shareholderName];
+
+        if (response === 'Accept') {
+            let userShares = (shareholder.portfolio && shareholder.portfolio[bb.compId]) || 0;
+            if (userShares < bb.qty) {
+                bb.status = 'Dibatalkan (Saham Tidak Cukup)';
+                await saveGame();
+                return alert("Anda tidak memiliki cukup lembar saham untuk dieksekusi.");
+            }
+            if (comp.treasury < bb.totalPrice) {
+                bb.status = 'Dibatalkan (Kas PT Tidak Cukup)';
+                await saveGame();
+                return alert("Kas perusahaan tidak cukup untuk mengeksekusi buyback ini.");
+            }
+
+            comp.treasury -= bb.totalPrice;
+            shareholder.wallet += bb.totalPrice;
+            shareholder.portfolio[bb.compId] -= bb.qty;
+            comp.availableShares += bb.qty;
+
+            logCompanyTransaction(comp, 'KELUAR', bb.totalPrice, `Buyback ${bb.qty} lembar saham dari ${bb.shareholderName}`);
+            bb.status = 'Disetujui & Dieksekusi';
+
+            alert(`🎉 Buyback disetujui! Sebesar Rp ${bb.totalPrice.toLocaleString('id-ID')} masuk ke dompet Anda.`);
+        } else {
+            bb.status = 'Ditolak oleh Pemegang Saham';
+            alert("Anda telah menolak tawaran Buy Back saham.");
+        }
+
+        await saveGame();
+        renderRUPS();
+        let walletEl = document.getElementById('ui-wallet-badge');
+        if (walletEl) walletEl.innerText = `Saldo: Rp ${db.currentUser.wallet.toLocaleString('id-ID')}`;
     }
 
     async function createRupsProposal() {
@@ -1859,7 +2227,7 @@
         if (isNaN(amount) || amount <= 0) return alert("Masukkan nominal dividen yang valid!");
 
         let comp = db.companies[compId];
-        if (comp.treasury < amount) return alert(`Kas perusahaan tidak mencukupi untuk membagikan dividen sebesar Rp ${amount.toLocaleString('id-ID')}! Kas saat ini: Rp ${comp.treasury.toLocaleString('id-ID')}`);
+        if (comp.treasury < amount) return alert(`Kas perusahaan tidak mencukupi untuk membagikan dividen sebesar Rp ${amount.toLocaleString('id-ID')}!`);
 
         if (!db.rupsProposals) db.rupsProposals = [];
         db.rupsProposals.push({
@@ -1876,7 +2244,7 @@
 
         document.getElementById('rups-prop-amount').value = "";
         await saveGame();
-        alert("Agenda RUPS berhasil diajukan! Para pemegang saham kini dapat melakukan voting.");
+        alert("Agenda RUPS dividen berhasil diajukan!");
         renderRUPS();
     }
 
@@ -1908,10 +2276,9 @@
         }
 
         if ((prop.votesYes || 0) >= (prop.votesNo || 0)) {
-            // RUPS Approved: Distribute dividends proportionally to all shareholders
             comp.treasury -= prop.totalDividend;
+            logCompanyTransaction(comp, 'KELUAR', prop.totalDividend, `Pembayaran Dividen RUPS kepada Pemegang Saham`);
 
-            // Calculate total distributed shares among users
             let totalDistributedShares = comp.totalShares - comp.availableShares;
             if (totalDistributedShares <= 0) totalDistributedShares = 1;
 
@@ -1926,11 +2293,10 @@
                 }
             }
 
-            // Also CEO gets dividend if they hold shares
             prop.status = 'Disetujui & Dibagikan';
-            fluctuationStockPriceOnActivity(comp, 1.10); // Boost stock price on dividend payout
+            fluctuationStockPriceOnActivity(comp, 1.10);
 
-            alert(`🎉 RUPS Disetujui! Dividen sebesar Rp ${prop.totalDividend.toLocaleString('id-ID')} telah dibagikan ke dompet para pemegang saham.`);
+            alert(`🎉 RUPS Disetujui! Dividen sebesar Rp ${prop.totalDividend.toLocaleString('id-ID')} dibagikan.`);
         } else {
             prop.status = 'Ditolak Pemegang Saham';
             alert("RUPS ditolak oleh mayoritas pemegang saham.");
@@ -1940,7 +2306,84 @@
         renderRUPS();
     }
 
-    // BANK & LOANS TAB
+    async function createCeoElectionProposal() {
+        let compId = document.getElementById('ceo-prop-comp').value;
+        let candidateName = document.getElementById('ceo-prop-candidate').value;
+
+        if (!compId || !candidateName) return alert("Pilih perusahaan dan kandidat CEO!");
+
+        let comp = db.companies[compId];
+        if (!comp.isPublic) return alert("Perusahaan harus sudah Go Public (IPO) untuk melakukan voting CEO!");
+
+        if (!db.ceoElectionProposals) db.ceoElectionProposals = [];
+        db.ceoElectionProposals.push({
+            id: 'CEO_VOTE_' + Date.now(),
+            compId: compId,
+            candidateName: candidateName,
+            proposerName: db.currentUser.name,
+            status: 'Voting',
+            votesYes: 0,
+            votesNo: 0,
+            voters: {}
+        });
+
+        await saveGame();
+        alert(`Usulan voting CEO baru (${candidateName}) untuk PT ${comp.name} berhasil dibuat!`);
+        renderRUPS();
+    }
+
+    async function voteCeoElection(index, support) {
+        let cProp = db.ceoElectionProposals[index];
+        if (!cProp.voters) cProp.voters = {};
+        if (cProp.voters[db.currentUser.name]) return alert("Anda sudah memberikan suara pada voting ini!");
+
+        cProp.voters[db.currentUser.name] = support;
+        if (support === 'Setuju') {
+            cProp.votesYes = (cProp.votesYes || 0) + 1;
+        } else {
+            cProp.votesNo = (cProp.votesNo || 0) + 1;
+        }
+
+        await saveGame();
+        alert(`Berhasil memberikan suara: ${support}`);
+        renderRUPS();
+    }
+
+    async function finalizeCeoElection(index) {
+        let cProp = db.ceoElectionProposals[index];
+        let comp = db.companies[cProp.compId];
+
+        if ((cProp.votesYes || 0) >= (cProp.votesNo || 0)) {
+            let oldCeoName = comp.ceoName;
+            let newCeoName = cProp.candidateName;
+
+            comp.ceoName = newCeoName;
+
+            let newCeoUser = db.users[newCeoName];
+            if (newCeoUser) {
+                newCeoUser.role = 'CEO';
+                newCeoUser.companyId = comp.id;
+            }
+
+            if (oldCeoName && db.users[oldCeoName]) {
+                let oldCeoUser = db.users[oldCeoName];
+                oldCeoUser.role = 'Staff';
+                oldCeoUser.companyId = null;
+            }
+
+            cProp.status = 'Disetujui & Diterapkan';
+            logCompanyTransaction(comp, 'MASUK', 0, `Pergantian CEO Baru: ${newCeoName} menggantikan ${oldCeoName}`);
+
+            alert(`🎉 Voting Rapat Umum Dewan Direksi Sukses! CEO baru PT ${comp.name} adalah ${newCeoName}. Mantan CEO (${oldCeoName}) kini menjadi Pemegang Saham biasa.`);
+        } else {
+            cProp.status = 'Ditolak';
+            alert("Voting pemilihan CEO baru ditolak oleh mayoritas pemegang saham.");
+        }
+
+        await saveGame();
+        renderRUPS();
+    }
+
     async function submitLoanApplication() {
         let targetType = document.getElementById('loan-target-type').value;
         let amount = parseFloat(document.getElementById('loan-amount').value);
