@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + CEO Direct Role Transfer</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Certification Update</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -179,8 +179,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10 + CEO Direct Role Transfer</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">CEO dapat langsung memindahkan role/divisi karyawan di perusahaannya, Buyback Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + Certification Update</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">Sertifikasi Pegawai Rp 500.000 (Maks 250 Unit/Hari), Buyback Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -520,7 +520,7 @@
                         <h4>Staff Produksi: Kapasitas & Inventaris Stok Perusahaan</h4>
                         <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                             <p>Sertifikasi: <strong id="ui-cert-status" style="color:var(--danger)">Belum (Maks 20 Unit/Hari)</strong></p>
-                            <button id="btn-cert" class="btn btn-primary" style="margin-top: 10px;" onclick="takeCertification()">Ambil Pelatihan (Biaya: Rp 50.000)</button>
+                            <button id="btn-cert" class="btn btn-primary" style="margin-top: 10px;" onclick="takeCertification()">Ambil Pelatihan (Biaya: Rp 500.000)</button>
                         </div>
                         <table>
                             <thead><tr><th>Produk</th><th>Harga Jual</th><th>HPP / Unit</th><th>Stok di PT</th><th>Sisa Kuota</th><th>Produksi</th></tr></thead>
@@ -1898,12 +1898,12 @@
         const btnCert = document.getElementById('btn-cert');
         if (db.currentUser.certified) {
             if (statusEl) {
-                statusEl.innerText = "Sudah Bersertifikasi (Maks 100 Unit/Hari)";
+                statusEl.innerText = "Sudah Bersertifikasi (Maks 250 Unit/Hari)";
                 statusEl.style.color = "var(--success)";
             }
             if (btnCert) btnCert.style.display = "none";
         }
-        let maxLimit = db.currentUser.certified ? 100 : 20;
+        let maxLimit = db.currentUser.certified ? 250 : 20;
         let sisa = maxLimit - db.currentUser.producedToday;
 
         const tbody = document.getElementById('table-production-products');
@@ -1917,16 +1917,16 @@
     }
 
     async function takeCertification() {
-        if (db.currentUser.wallet < 50000) return alert("Saldo tidak cukup untuk pelatihan (Rp 50.000)!");
-        db.currentUser.wallet -= 50000;
+        if (db.currentUser.wallet < 500000) return alert("Saldo tidak cukup untuk pelatihan (Rp 500.000)!");
+        db.currentUser.wallet -= 500000;
         db.currentUser.certified = true;
         await saveGame();
-        alert("Sertifikasi berhasil! Kapasitas naik jadi 100 Unit/hari.");
+        alert("Sertifikasi berhasil! Kapasitas naik jadi 250 Unit/hari.");
         openDashboard();
     }
 
     async function produceProduct(compId, prodId) {
-        let maxLimit = db.currentUser.certified ? 100 : 20;
+        let maxLimit = db.currentUser.certified ? 250 : 20;
         if (db.currentUser.producedToday + 10 > maxLimit) return alert("Batas kuota produksi harian habis!");
         let comp = db.companies[compId];
         let p = comp.products.find(x => x.id === prodId);
