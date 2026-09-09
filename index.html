@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + GM Divisi Transfer</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + CEO Direct Role Transfer</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -179,8 +179,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10 + GM Divisi Transfer</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">Dilengkapi fitur GM usul perpindahan divisi karyawan (Staff, Produksi, Marketing), Buyback Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + CEO Direct Role Transfer</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">CEO dapat langsung memindahkan role/divisi karyawan di perusahaannya, Buyback Saham, RUPS, Voting CEO, dan Laporan Arus Kas.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -193,7 +193,7 @@
         <div id="auth-role-section">
             <h3 style="margin-top: 16px;">Pilih Role:</h3>
             <div class="role-grid" id="role-selection">
-                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & Approval</small></div>
+                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & Direct Transfer</small></div>
                 <div class="role-card" data-role="General Manager" onclick="selectRole('General Manager')"><strong>General Manager</strong><br><small>Usul Divisi & Produk</small></div>
                 <div class="role-card" data-role="Direktur Keuangan" onclick="selectRole('Direktur Keuangan')"><strong>Dir. Keuangan</strong><br><small>Kas & Bonus</small></div>
                 <div class="role-card" data-role="Staff Marketing" onclick="selectRole('Staff Marketing')"><strong>Marketing & Sales</strong><br><small>Jual Produk</small></div>
@@ -424,8 +424,8 @@
                     <h4>Kelola Karyawan</h4>
                     <h5>Pelamar Masuk:</h5>
                     <table><thead><tr><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead><tbody id="table-applicants"></tbody></table>
-                    <h5 style="margin-top: 15px;">Karyawan Aktif:</h5>
-                    <table><thead><tr><th>Nama</th><th>Role</th><th>Gaji</th><th>Aksi</th></tr></thead><tbody id="table-staff"></tbody></table>
+                    <h5 style="margin-top: 15px;">Karyawan Aktif (CEO Dapat Langsung Mengubah Divisi/Role):</h5>
+                    <table><thead><tr><th>Nama</th><th>Role Saat Ini</th><th>Ubah Divisi / Role Langsung</th><th>Aksi Pemecatan</th></tr></thead><tbody id="table-staff"></tbody></table>
                 </div>
             </div>
 
@@ -1203,7 +1203,6 @@
             document.getElementById('salary-mkt').value = myComp.salaries['Staff Marketing'] || 0;
             document.getElementById('salary-prod').value = myComp.salaries['Staff Produksi'] || 0;
 
-            // RENDER ROLE PROPOSALS FROM GM
             const tbodyRoleProp = document.getElementById('table-role-proposals');
             tbodyRoleProp.innerHTML = "";
             if (myComp.roleProposals && myComp.roleProposals.length > 0) {
@@ -1258,12 +1257,24 @@
             }
             if(!myComp.applicants || myComp.applicants.length === 0) tbodyApp.innerHTML = `<tr><td colspan="3" style="color:var(--secondary)">Tidak ada pelamar.</td></tr>`;
 
+            // RENDER STAFF WITH CEO DIRECT ROLE CHANGE DROP DOWN
             const tbodyStaff = document.getElementById('table-staff');
             tbodyStaff.innerHTML = "";
+            let availableRoles = ['General Manager', 'Direktur Keuangan', 'Staff Marketing', 'Staff Produksi'];
             if (myComp.staff) {
                 myComp.staff.forEach(st => {
-                    let sal = myComp.salaries[st.role] || 0;
-                    tbodyStaff.innerHTML += `<tr><td>${st.name}</td><td><span class="badge">${st.role}</span></td><td>Rp ${sal.toLocaleString('id-ID')}</td><td><button class="btn btn-danger" onclick="fireUser('${myComp.id}', '${st.name}')">Pecat</button></td></tr>`;
+                    let roleOptions = availableRoles.map(r => `<option value="${r}" ${st.role === r ? 'selected' : ''}>${r}</option>`).join('');
+                    tbodyStaff.innerHTML += `
+                        <tr>
+                            <td><strong>${st.name}</strong></td>
+                            <td><span class="badge">${st.role}</span></td>
+                            <td>
+                                <select id="ceo-changerole-${st.name}" style="padding:4px 6px; font-size:0.85rem; width:150px; display:inline-block; margin-right:6px;">${roleOptions}</select>
+                                <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="ceoDirectChangeRole('${myComp.id}', '${st.name}')">Ubah Divisi</button>
+                            </td>
+                            <td><button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="fireUser('${myComp.id}', '${st.name}')">Pecat</button></td>
+                        </tr>
+                    `;
                 });
             }
             if(!myComp.staff || myComp.staff.length === 0) tbodyStaff.innerHTML = `<tr><td colspan="4" style="color:var(--secondary)">Tidak ada karyawan.</td></tr>`;
@@ -1497,7 +1508,6 @@
         renderCEO();
     }
 
-    // APPROVE ROLE TRANSFER PROPOSAL (CEO ACTION)
     async function approveRoleProposal(idx) {
         let myComp = getMyCompany();
         let prop = myComp.roleProposals[idx];
@@ -1516,6 +1526,30 @@
         logCompanyTransaction(myComp, 'MASUK', 0, `Persetujuan Perubahan Divisi ${prop.staffName} dari ${prop.oldRole} ke ${prop.newRole}`);
         await saveGame();
         alert(`Perubahan divisi untuk ${prop.staffName} menjadi ${prop.newRole} berhasil disetujui!`);
+        renderCEO();
+    }
+
+    // CEO DIRECTLY CHANGE WORKER ROLE/DIVISION
+    async function ceoDirectChangeRole(compId, staffName) {
+        let comp = db.companies[compId];
+        let selectEl = document.getElementById(`ceo-changerole-${staffName}`);
+        let newRole = selectEl.value;
+        let staffUser = db.users[staffName];
+
+        if (!staffUser) return alert("User tidak ditemukan!");
+        if (staffUser.role === newRole) return alert("Karyawan sudah berada di divisi/role tersebut!");
+
+        let oldRole = staffUser.role;
+        staffUser.role = newRole;
+
+        let compStaffObj = comp.staff.find(s => s.name === staffName);
+        if (compStaffObj) {
+            compStaffObj.role = newRole;
+        }
+
+        logCompanyTransaction(comp, 'MASUK', 0, `CEO mengubah langsung role ${staffName} dari ${oldRole} menjadi ${newRole}`);
+        await saveGame();
+        alert(`Berhasil mengubah divisi ${staffName} dari ${oldRole} menjadi ${newRole}!`);
         renderCEO();
     }
 
@@ -1643,7 +1677,6 @@
         document.getElementById('gm-prod-cost').value = "";
     }
 
-    // GM WORKSPACE DROPDOWN RENDER & SUBMIT ROLE TRANSFER
     function renderGMWorkspace(comp) {
         const staffSelect = document.getElementById('gm-transfer-staff');
         staffSelect.innerHTML = '<option value="">-- Pilih Karyawan --</option>';
