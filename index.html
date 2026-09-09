@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Single Company Rule</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + Monthly/Daily Salary Cycle</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -199,8 +199,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10 + Single Company Rule</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">Satu perusahaan per user, Manager Produksi/Marketing oleh GM, Broadcast Admin, & RUPS.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + Gaji Bulanan/Harian</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">Satu perusahaan per user, siklus gaji fleksibel (Bulanan/Harian), Manager oleh GM, & RUPS.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -438,16 +438,41 @@
 
                     <hr style="margin: 16px 0; border: 1px solid #e2e8f0;">
 
-                    <h4>Pengaturan Gaji Harian per Role</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px;">
-                        <div><label style="font-size:0.8rem;">General Manager</label><input type="number" id="salary-gm" /></div>
-                        <div><label style="font-size:0.8rem;">Direktur Keuangan</label><input type="number" id="salary-fin" /></div>
-                        <div><label style="font-size:0.8rem;">Manager Produksi</label><input type="number" id="salary-mgrprod" /></div>
-                        <div><label style="font-size:0.8rem;">Manager Marketing</label><input type="number" id="salary-mgrmkt" /></div>
-                        <div><label style="font-size:0.8rem;">Staff Marketing</label><input type="number" id="salary-mkt" /></div>
-                        <div><label style="font-size:0.8rem;">Staff Produksi</label><input type="number" id="salary-prod" /></div>
+                    <h4>Pengaturan Gaji & Siklus Pembayaran per Role</h4>
+                    <p style="font-size: 0.85rem; color: var(--secondary); margin-bottom: 12px;">CEO dapat menetapkan nominal gaji serta siklus pembayaran (Bulanan atau Harian) untuk setiap role.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <label style="font-size:0.8rem; font-weight:bold;">General Manager</label>
+                            <input type="number" id="salary-gm" placeholder="Nominal" />
+                            <select id="cycle-gm" style="font-size:0.8rem; padding:6px;"><option value="bulanan">Bulanan</option><option value="harian">Harian</option></select>
+                        </div>
+                        <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <label style="font-size:0.8rem; font-weight:bold;">Direktur Keuangan</label>
+                            <input type="number" id="salary-fin" placeholder="Nominal" />
+                            <select id="cycle-fin" style="font-size:0.8rem; padding:6px;"><option value="bulanan">Bulanan</option><option value="harian">Harian</option></select>
+                        </div>
+                        <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <label style="font-size:0.8rem; font-weight:bold;">Manager Produksi</label>
+                            <input type="number" id="salary-mgrprod" placeholder="Nominal" />
+                            <select id="cycle-mgrprod" style="font-size:0.8rem; padding:6px;"><option value="bulanan">Bulanan</option><option value="harian">Harian</option></select>
+                        </div>
+                        <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <label style="font-size:0.8rem; font-weight:bold;">Manager Marketing</label>
+                            <input type="number" id="salary-mgrmkt" placeholder="Nominal" />
+                            <select id="cycle-mgrmkt" style="font-size:0.8rem; padding:6px;"><option value="bulanan">Bulanan</option><option value="harian">Harian</option></select>
+                        </div>
+                        <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <label style="font-size:0.8rem; font-weight:bold;">Staff Marketing</label>
+                            <input type="number" id="salary-mkt" placeholder="Nominal" />
+                            <select id="cycle-mkt" style="font-size:0.8rem; padding:6px;"><option value="bulanan">Bulanan</option><option value="harian">Harian</option></select>
+                        </div>
+                        <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #cbd5e1;">
+                            <label style="font-size:0.8rem; font-weight:bold;">Staff Produksi</label>
+                            <input type="number" id="salary-prod" placeholder="Nominal" />
+                            <select id="cycle-prod" style="font-size:0.8rem; padding:6px;"><option value="bulanan">Bulanan</option><option value="harian">Harian</option></select>
+                        </div>
                     </div>
-                    <button class="btn btn-success" onclick="updateSalarySettings()">Simpan Gaji</button>
+                    <button class="btn btn-success" onclick="updateSalarySettings()">Simpan Gaji & Siklus</button>
 
                     <hr style="margin: 16px 0; border: 1px solid #e2e8f0;">
 
@@ -478,7 +503,7 @@
                 <div id="staff-workspace" class="hidden" style="margin-top: 20px;">
                     <h3>Ruang Kerja <span id="ui-workspace-pt" class="badge">PT</span></h3>
                     <p style="font-size: 0.9rem; color:var(--secondary); margin-bottom: 15px;">
-                        Gaji Anda: <strong id="ui-staff-salary" style="color:var(--success);">Rp 0 / hari</strong>
+                        Gaji Anda: <strong id="ui-staff-salary" style="color:var(--success);">Rp 0</strong>
                     </p>
                     
                     <!-- GM WORKSPACE -->
@@ -1349,15 +1374,24 @@
             }
 
             if (!myComp.salaries) {
-                myComp.salaries = { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Manager Produksi': 50000, 'Manager Marketing': 50000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 };
+                myComp.salaries = { 'General Manager': 3000000, 'Direktur Keuangan': 3000000, 'Manager Produksi': 2500000, 'Manager Marketing': 2500000, 'Staff Marketing': 2000000, 'Staff Produksi': 2000000 };
+            }
+            if (!myComp.salaryCycles) {
+                myComp.salaryCycles = { 'General Manager': 'bulanan', 'Direktur Keuangan': 'bulanan', 'Manager Produksi': 'bulanan', 'Manager Marketing': 'bulanan', 'Staff Marketing': 'bulanan', 'Staff Produksi': 'bulanan' };
             }
 
             document.getElementById('salary-gm').value = myComp.salaries['General Manager'] || 0;
+            document.getElementById('cycle-gm').value = myComp.salaryCycles['General Manager'] || 'bulanan';
             document.getElementById('salary-fin').value = myComp.salaries['Direktur Keuangan'] || 0;
+            document.getElementById('cycle-fin').value = myComp.salaryCycles['Direktur Keuangan'] || 'bulanan';
             document.getElementById('salary-mgrprod').value = myComp.salaries['Manager Produksi'] || 0;
+            document.getElementById('cycle-mgrprod').value = myComp.salaryCycles['Manager Produksi'] || 'bulanan';
             document.getElementById('salary-mgrmkt').value = myComp.salaries['Manager Marketing'] || 0;
+            document.getElementById('cycle-mgrmkt').value = myComp.salaryCycles['Manager Marketing'] || 'bulanan';
             document.getElementById('salary-mkt').value = myComp.salaries['Staff Marketing'] || 0;
+            document.getElementById('cycle-mkt').value = myComp.salaryCycles['Staff Marketing'] || 'bulanan';
             document.getElementById('salary-prod').value = myComp.salaries['Staff Produksi'] || 0;
+            document.getElementById('cycle-prod').value = myComp.salaryCycles['Staff Produksi'] || 'bulanan';
 
             const tbodyRoleProp = document.getElementById('table-role-proposals');
             tbodyRoleProp.innerHTML = "";
@@ -1467,11 +1501,12 @@
             id: compId, name: name, ceoName: db.currentUser.name, day: 1, month: 1,
             monthlyProductionTarget: 100, monthlySalesTarget: 50,
             currentMonthProduction: 0, currentMonthSales: 0, targetFailed: false,
-            salaries: { 'General Manager': 60000, 'Direktur Keuangan': 60000, 'Manager Produksi': 50000, 'Manager Marketing': 50000, 'Staff Marketing': 40000, 'Staff Produksi': 40000 },
-            treasury: 2000000, products: [], staff: [], applicants: [], gmProposals: [], bonusProposals: [], roleProposals: [], transactions: [],
+            salaries: { 'General Manager': 3000000, 'Direktur Keuangan': 3000000, 'Manager Produksi': 2500000, 'Manager Marketing': 2500000, 'Staff Marketing': 2000000, 'Staff Produksi': 2000000 },
+            salaryCycles: { 'General Manager': 'bulanan', 'Direktur Keuangan': 'bulanan', 'Manager Produksi': 'bulanan', 'Manager Marketing': 'bulanan', 'Staff Marketing': 'bulanan', 'Staff Produksi': 'bulanan' },
+            treasury: 5000000, products: [], staff: [], applicants: [], gmProposals: [], bonusProposals: [], roleProposals: [], transactions: [],
             isPublic: false, stockPrice: 0, totalShares: 10000, availableShares: 5000, lastShareIssueDay: 1
         };
-        logCompanyTransaction(db.companies[compId], 'MASUK', 2000000, 'Modal Awal Pendirian Perusahaan');
+        logCompanyTransaction(db.companies[compId], 'MASUK', 5000000, 'Modal Awal Pendirian Perusahaan');
         db.currentUser.companyId = compId;
         db.currentUser.lastDayProcessed = 1;
         await saveGame();
@@ -1560,14 +1595,28 @@
     async function updateSalarySettings() {
         let myComp = getMyCompany();
         if (!myComp.salaries) myComp.salaries = {};
+        if (!myComp.salaryCycles) myComp.salaryCycles = {};
+
         myComp.salaries['General Manager'] = parseFloat(document.getElementById('salary-gm').value) || 0;
+        myComp.salaryCycles['General Manager'] = document.getElementById('cycle-gm').value;
+
         myComp.salaries['Direktur Keuangan'] = parseFloat(document.getElementById('salary-fin').value) || 0;
+        myComp.salaryCycles['Direktur Keuangan'] = document.getElementById('cycle-fin').value;
+
         myComp.salaries['Manager Produksi'] = parseFloat(document.getElementById('salary-mgrprod').value) || 0;
+        myComp.salaryCycles['Manager Produksi'] = document.getElementById('cycle-mgrprod').value;
+
         myComp.salaries['Manager Marketing'] = parseFloat(document.getElementById('salary-mgrmkt').value) || 0;
+        myComp.salaryCycles['Manager Marketing'] = document.getElementById('cycle-mgrmkt').value;
+
         myComp.salaries['Staff Marketing'] = parseFloat(document.getElementById('salary-mkt').value) || 0;
+        myComp.salaryCycles['Staff Marketing'] = document.getElementById('cycle-mkt').value;
+
         myComp.salaries['Staff Produksi'] = parseFloat(document.getElementById('salary-prod').value) || 0;
+        myComp.salaryCycles['Staff Produksi'] = document.getElementById('cycle-prod').value;
+
         await saveGame();
-        alert("Gaji per role berhasil disimpan!");
+        alert("Gaji & siklus pembayaran berhasil disimpan!");
         renderCEO();
     }
 
@@ -1601,14 +1650,56 @@
 
     async function ceoAdvanceDay() {
         let myComp = getMyCompany();
-        let totalSal = 0;
-        if (myComp.staff) {
-            myComp.staff.forEach(st => totalSal += ((myComp.salaries && myComp.salaries[st.role]) || 0));
-        }
-        if (myComp.treasury < totalSal) return alert(`Kas PT tidak cukup untuk bayar gaji total Rp ${totalSal.toLocaleString('id-ID')}!`);
+        let totalSalaryToPay = 0;
+        let isMonthEnd = (myComp.day % 30 === 0);
 
-        myComp.treasury -= totalSal;
-        logCompanyTransaction(myComp, 'KELUAR', totalSal, `Pembayaran Gaji Karyawan Hari ke-${myComp.day || 1}`);
+        if (myComp.staff) {
+            myComp.staff.forEach(st => {
+                let role = st.role;
+                let amt = (myComp.salaries && myComp.salaries[role]) || 0;
+                let cycle = (myComp.salaryCycles && myComp.salaryCycles[role]) || 'bulanan';
+
+                if (cycle === 'harian') {
+                    totalSalaryToPay += amt;
+                } else if (cycle === 'bulanan' && isMonthEnd) {
+                    totalSalaryToPay += amt;
+                }
+            });
+        }
+
+        if (myComp.treasury < totalSalaryToPay) {
+            return alert(`Kas PT tidak cukup untuk membayar total gaji sebesar Rp ${totalSalaryToPay.toLocaleString('id-ID')}!`);
+        }
+
+        if (totalSalaryToPay > 0) {
+            myComp.treasury -= totalSalaryToPay;
+            logCompanyTransaction(myComp, 'KELUAR', totalSalaryToPay, `Pembayaran Gaji Karyawan Hari ke-${myComp.day}${isMonthEnd ? ' (Termasuk Gaji Bulanan)' : ''}`);
+        }
+
+        if (myComp.staff) {
+            myComp.staff.forEach(st => {
+                let u = db.users[st.name];
+                if(u) {
+                    let role = st.role;
+                    let amt = (myComp.salaries && myComp.salaries[role]) || 0;
+                    let cycle = (myComp.salaryCycles && myComp.salaryCycles[role]) || 'bulanan';
+
+                    let paidNow = 0;
+                    if (cycle === 'harian') {
+                        paidNow = amt;
+                    } else if (cycle === 'bulanan' && isMonthEnd) {
+                        paidNow = amt;
+                    }
+
+                    if (paidNow > 0) {
+                        u.wallet += paidNow;
+                    }
+                    u.producedToday = 0;
+                    u.lastDayProcessed = myComp.day + 1;
+                }
+            });
+        }
+
         myComp.day = (myComp.day || 1) + 1;
 
         if ((myComp.day - 1) % 30 === 0 && myComp.day > 1) {
@@ -1640,19 +1731,8 @@
             fluctuationStockPriceOnActivity(myComp, 1.02);
         }
 
-        if (myComp.staff) {
-            myComp.staff.forEach(st => {
-                let u = db.users[st.name];
-                if(u) {
-                    u.wallet += ((myComp.salaries && myComp.salaries[st.role]) || 0);
-                    u.producedToday = 0;
-                    u.lastDayProcessed = myComp.day;
-                }
-            });
-        }
-
         await saveGame();
-        alert(`Hari maju ke Hari ke-${myComp.day}! Gaji staf dibayarkan otomatis.`);
+        alert(`Hari maju ke Hari ke-${myComp.day}! Gaji staf diproses sesuai siklus.`);
         renderCEO();
     }
 
@@ -1794,8 +1874,9 @@
                 db.currentUser.lastDayProcessed = activeComp.day;
             }
             let mySal = (activeComp.salaries && activeComp.salaries[db.currentUser.role]) || 0;
+            let myCyc = (activeComp.salaryCycles && activeComp.salaryCycles[db.currentUser.role]) || 'bulanan';
             let salaryEl = document.getElementById('ui-staff-salary');
-            if (salaryEl) salaryEl.innerText = `Rp ${mySal.toLocaleString('id-ID')} / hari`;
+            if (salaryEl) salaryEl.innerText = `Rp ${mySal.toLocaleString('id-ID')} / ${myCyc}`;
 
             market.innerHTML = `<div class="company-box" style="border-color:var(--success)"><h4>Bekerja di: ${activeComp.name}</h4><p style="font-size:0.85rem; color:var(--secondary); margin-top:4px;">Anda terikat di 1 perusahaan. Resign jika ingin melamar ke perusahaan lain.</p><button class="btn btn-danger" style="margin-top:10px;" onclick="resignJob()">Resign dari Perusahaan</button></div>`;
             workspace.classList.remove('hidden');
@@ -1843,7 +1924,17 @@
                 let comp = db.companies[id];
                 let hasApp = comp.applicants && comp.applicants.some(a => a.name === db.currentUser.name);
                 let btnHtml = hasApp ? `<button class="btn btn-secondary" disabled>Lamaran Terkirim</button>` : `<button class="btn btn-primary" onclick="applyJob('${id}')">Lamar Pekerjaan</button>`;
-                market.innerHTML += `<div class="company-box"><h4>${comp.name}</h4><p style="margin-bottom:8px;">CEO: ${comp.ceoName}</p>${btnHtml}</div>`;
+                
+                let salaryInfoHtml = `<div style="margin: 10px 0; font-size: 0.85rem; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;"><strong>💼 Struktur Gaji Perusahaan:</strong><ul style="margin-left:18px; margin-top:6px;">`;
+                let roles = ['General Manager', 'Direktur Keuangan', 'Manager Produksi', 'Manager Marketing', 'Staff Marketing', 'Staff Produksi'];
+                roles.forEach(r => {
+                    let sal = comp.salaries && comp.salaries[r] ? comp.salaries[r] : 0;
+                    let cyc = comp.salaryCycles && comp.salaryCycles[r] ? comp.salaryCycles[r] : 'bulanan';
+                    salaryInfoHtml += `<li>${r}: <strong>Rp ${sal.toLocaleString('id-ID')} (${cyc})</strong></li>`;
+                });
+                salaryInfoHtml += `</ul></div>`;
+
+                market.innerHTML += `<div class="company-box"><h4>${comp.name}</h4><p style="margin-bottom:4px; font-size:0.9rem; color:var(--secondary);">CEO: <strong>${comp.ceoName}</strong></p>${salaryInfoHtml}${btnHtml}</div>`;
             });
         }
     }
