@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Roleplay Simulator - Firebase Realtime V10 (Fixed)</title>
+    <title>Corporate Roleplay Simulator - Firebase Realtime V10 + RUPS</title>
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -179,8 +179,8 @@
 <div class="container">
     <!-- AUTH SCREEN -->
     <div id="screen-auth" class="card">
-        <h1>Simulasi Korporat - Firebase Realtime V10</h1>
-        <p style="margin-bottom: 16px; color: var(--secondary);">Dilengkapi fitur Cek Gudang CEO, IPO Bursa Saham dengan fluktuasi harga otomatis, serta trading saham realtime lintas perangkat via Firebase.</p>
+        <h1>Simulasi Korporat - Firebase Realtime V10 + RUPS</h1>
+        <p style="margin-bottom: 16px; color: var(--secondary);">Dilengkapi fitur Rapat Umum Pemegang Saham (RUPS) khusus CEO & Pemegang Saham, Gudang CEO, serta Bursa Saham IPO Realtime.</p>
         
         <div style="display: flex; gap: 10px; margin-bottom: 12px;">
             <button class="btn btn-primary" id="auth-mode-reg" onclick="switchAuthMode('reg')">Daftar Akun Baru</button>
@@ -193,7 +193,7 @@
         <div id="auth-role-section">
             <h3 style="margin-top: 16px;">Pilih Role:</h3>
             <div class="role-grid" id="role-selection">
-                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & IPO</small></div>
+                <div class="role-card" data-role="CEO" onclick="selectRole('CEO')"><strong>CEO</strong><br><small>Gudang & RUPS</small></div>
                 <div class="role-card" data-role="General Manager" onclick="selectRole('General Manager')"><strong>General Manager</strong><br><small>Usul Produk</small></div>
                 <div class="role-card" data-role="Direktur Keuangan" onclick="selectRole('Direktur Keuangan')"><strong>Dir. Keuangan</strong><br><small>Harga Jual</small></div>
                 <div class="role-card" data-role="Staff Marketing" onclick="selectRole('Staff Marketing')"><strong>Marketing & Sales</strong><br><small>Jual Produk</small></div>
@@ -229,6 +229,7 @@
             <button class="nav-tab active" onclick="switchTab('workspace', this)">🏢 Ruang Kerja / Perusahaan</button>
             <button class="nav-tab" onclick="switchTab('marketplace', this)">🛍️ Marketplace Produk</button>
             <button class="nav-tab" onclick="switchTab('stockexchange', this)">📈 Bursa Saham (IPO)</button>
+            <button class="nav-tab" onclick="switchTab('rups', this)">🏛️ RUPS & Dividen</button>
             <button class="nav-tab" onclick="switchTab('bank', this)">🏦 Bank & Pinjaman</button>
             <button class="nav-tab" onclick="switchTab('profile', this)">🔐 Profil & Password</button>
             <button class="nav-tab hidden" id="tab-btn-admin" onclick="switchTab('admin', this)">👑 Panel Admin</button>
@@ -491,7 +492,17 @@
             </div>
         </div>
 
-        <!-- TAB 4: BANK & LOANS -->
+        <!-- TAB 4: RUPS & DIVIDEN -->
+        <div id="tab-rups" class="tab-content hidden">
+            <div class="card">
+                <h3>🏛️ Rapat Umum Pemegang Saham (RUPS) & Keputusan Dividen</h3>
+                <p style="color: var(--secondary); margin-bottom: 20px;">Hanya dapat diakses dan dihadiri oleh **CEO** dan **Para Pemegang Saham** perusahaan terkait untuk memutuskan besaran dividen.</p>
+                
+                <div id="rups-access-container"></div>
+            </div>
+        </div>
+
+        <!-- TAB 5: BANK & LOANS -->
         <div id="tab-bank" class="tab-content hidden">
             <div class="card">
                 <h3>🏦 Bank Korporat & Layanan Pinjaman (Bunga Bulanan 5%)</h3>
@@ -521,7 +532,7 @@
             </div>
         </div>
 
-        <!-- TAB 5: PROFILE & PASSWORD -->
+        <!-- TAB 6: PROFILE & PASSWORD -->
         <div id="tab-profile" class="tab-content hidden">
             <div class="card" style="max-width: 500px;">
                 <h3>🔐 Pengaturan Akun & Password</h3>
@@ -540,7 +551,7 @@
             </div>
         </div>
 
-        <!-- TAB 6: TRANSFER P2P -->
+        <!-- TAB 7: TRANSFER P2P -->
         <div id="tab-transfer" class="tab-content hidden">
             <div class="card">
                 <h3>💸 Transfer Dana Antar User (P2P)</h3>
@@ -579,7 +590,8 @@
         users: {},       
         companies: {},   
         marketProducts: [], 
-        loans: [],       
+        loans: [],
+        rupsProposals: [],      
         adminCode: "Bisnis2026"
     };
     let selectedRole = "";
@@ -603,6 +615,7 @@
                 db.companies = parsed.companies || {};
                 db.marketProducts = parsed.marketProducts || [];
                 db.loans = parsed.loans || [];
+                db.rupsProposals = parsed.rupsProposals || [];
                 db.adminCode = parsed.adminCode || "Bisnis2026";
 
                 if (db.currentUser && db.users[db.currentUser.name]) {
@@ -613,7 +626,6 @@
             }
             renderDebugUsers();
             if (db.currentUser && !document.getElementById('screen-dashboard').classList.contains('hidden')) {
-                // Periksa integritas companyId user agar tidak error jika data perusahaan terhapus
                 if (db.currentUser.companyId && !db.companies[db.currentUser.companyId]) {
                     db.currentUser.companyId = null;
                 }
@@ -638,6 +650,7 @@
                 companies: db.companies,
                 marketProducts: db.marketProducts,
                 loans: db.loans,
+                rupsProposals: db.rupsProposals,
                 adminCode: db.adminCode
             };
             await database.ref('gameData').set(saveData);
@@ -794,7 +807,6 @@
         if (el) {
             el.classList.add('active');
         } else {
-            // Fallback jika dipanggil tanpa elemen tombol
             const defaultTabBtn = document.querySelector(`.nav-tab[onclick*="switchTab('${tabName}'"]`);
             if (defaultTabBtn) defaultTabBtn.classList.add('active');
         }
@@ -802,6 +814,7 @@
         if (tabName === 'workspace') renderWorkspace();
         if (tabName === 'marketplace') renderMarketplace();
         if (tabName === 'stockexchange') renderStockExchange();
+        if (tabName === 'rups') renderRUPS();
         if (tabName === 'bank') renderMyLoans();
         if (tabName === 'profile') loadProfileData();
         if (tabName === 'admin') renderAdmin();
@@ -1055,7 +1068,6 @@
             document.getElementById('ui-company-treasury').innerText = `Rp ${(myComp.treasury || 0).toLocaleString('id-ID')}`;
             document.getElementById('ui-day-badge').innerText = `Hari ke-${myComp.day || 1}`;
 
-            // 1. Warehouse Inspection (Cek Gudang)
             const whContainer = document.getElementById('ceo-warehouse-list');
             whContainer.innerHTML = "";
             if (myComp.products) {
@@ -1065,7 +1077,6 @@
             }
             if(!myComp.products || myComp.products.length === 0) whContainer.innerHTML = `<p style="font-size:0.85rem; color:var(--secondary);">Gudang kosong (belum ada produk).</p>`;
 
-            // 2. IPO Valuation & Action
             let valuation = getCompanyValuation(myComp);
             document.getElementById('ui-company-valuation').innerText = `Rp ${valuation.toLocaleString('id-ID')}`;
             
@@ -1730,6 +1741,203 @@
     function fluctuationStockPriceOnActivity(comp, multiplier) {
         comp.stockPrice = Math.round(comp.stockPrice * multiplier);
         if (comp.stockPrice < 100) comp.stockPrice = 100;
+    }
+
+    // RUPS & DIVIDEND LOGIC (RESTRICTED TO CEO & SHAREHOLDERS)
+    function renderRUPS() {
+        const container = document.getElementById('rups-access-container');
+        if (!container) return;
+        container.innerHTML = "";
+
+        // Check if user is CEO of any company OR holds shares in any public company
+        let isCEO = false;
+        let userCompanies = [];
+        for (let id in db.companies) {
+            let c = db.companies[id];
+            if (c.ceoName === db.currentUser.name) {
+                isCEO = true;
+                userCompanies.push(c);
+            }
+        }
+
+        let hasShares = false;
+        let portfolio = db.currentUser.portfolio || {};
+        for (let compId in portfolio) {
+            if (portfolio[compId] > 0) {
+                hasShares = true;
+                break;
+            }
+        }
+
+        if (!isCEO && !hasShares && db.currentUser.role !== 'Admin') {
+            container.innerHTML = `
+                <div style="background:#fef2f2; border:1px solid var(--danger); padding:20px; border-radius:8px; text-align:center;">
+                    <h4 style="color:var(--danger);">⛔ Akses Ditolak</h4>
+                    <p style="color:var(--secondary);">Menu Rapat Umum Pemegang Saham (RUPS) hanya dapat diakses oleh **CEO Perusahaan** atau **Pemegang Saham** aktif.</p>
+                    <p style="margin-top:10px; font-size:0.9rem;">Silakan beli saham di Bursa Saham atau dirikan perusahaan terlebih dahulu.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = "";
+
+        // If user is CEO, show form to propose RUPS dividend
+        if (isCEO) {
+            html += `
+                <div class="company-box" style="border: 2px solid var(--primary); background: #f8fafc; margin-bottom: 25px;">
+                    <h4 style="color: var(--primary);">📢 Buat Agenda RUPS (Usulan Pembagian Dividen)</h4>
+                    <p style="font-size:0.85rem; color:var(--secondary); margin-bottom:12px;">Sebagai CEO, Anda dapat mengajukan rapat untuk membagikan sebagian Kas Perusahaan sebagai dividen kepada pemegang saham.</p>
+                    
+                    <label>Pilih Perusahaan Anda:</label>
+                    <select id="rups-prop-comp">
+            `;
+            userCompanies.forEach(c => {
+                html += `<option value="${c.id}">${c.name} (Kas: Rp ${(c.treasury || 0).toLocaleString('id-ID')})</option>`;
+            });
+            html += `
+                    </select>
+                    <label>Total Nilai Dividen yang Dibagikan (Rp):</label>
+                    <input type="number" id="rups-prop-amount" placeholder="Nominal Total Dividen" />
+                    <button class="btn btn-primary" onclick="createRupsProposal()">Ajukan RUPS Dividen</button>
+                </div>
+            `;
+        }
+
+        html += `<h4>Daftar Agenda RUPS & Voting Aktif</h4>`;
+        
+        let activeProposals = db.rupsProposals || [];
+        if (activeProposals.length === 0) {
+            html += `<p style="color:var(--secondary);">Belum ada agenda RUPS yang sedang berlangsung.</p>`;
+        } else {
+            activeProposals.forEach((prop, idx) => {
+                let comp = db.companies[prop.compId];
+                if (!comp) return;
+
+                let userShares = (db.currentUser.portfolio && db.currentUser.portfolio[prop.compId]) || 0;
+                let isCompCEO = comp.ceoName === db.currentUser.name;
+                let canVote = userShares > 0 || isCompCEO;
+
+                let myVote = prop.voters && prop.voters[db.currentUser.name];
+                let voteStatusHtml = myVote ? `<span class="badge" style="background:#dcfce7; color:#166534;">Anda sudah vote: ${myVote}</span>` : 
+                    (canVote ? `
+                        <button class="btn btn-success" style="padding:4px 10px; font-size:0.8rem;" onclick="voteRups(${idx}, 'Setuju')">👍 Setuju</button>
+                        <button class="btn btn-danger" style="padding:4px 10px; font-size:0.8rem;" onclick="voteRups(${idx}, 'Tolak')">👎 Tolak</button>
+                    ` : `<span style="color:var(--danger); font-size:0.85rem;">Anda bukan pemegang saham PT ini.</span>`);
+
+                let executeBtn = "";
+                if (isCompCEO && prop.status === 'Voting') {
+                    executeBtn = `<button class="btn btn-warning" style="margin-top:10px;" onclick="finalizeRups(${idx})">⚖️ Tutup RUPS & Eksekusi Dividen</button>`;
+                }
+
+                html += `
+                    <div class="company-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4>🏛️ RUPS ${comp.name}</h4>
+                            <span class="badge" style="background:#e0f2fe; color:#0369a1;">Status: ${prop.status}</span>
+                        </div>
+                        <p style="font-size:0.9rem; margin-top:6px;">CEO Pengusul: <strong>${prop.ceoName}</strong></p>
+                        <p style="font-size:0.9rem;">Total Dividen Diajukan: <strong style="color:var(--success);">Rp ${prop.totalDividend.toLocaleString('id-ID')}</strong></p>
+                        <p style="font-size:0.85rem; color:var(--secondary); margin-top:4px;">Suara Setuju: <strong>${prop.votesYes || 0}</strong> | Suara Tolak: ${prop.votesNo || 0}</p>
+                        <div style="margin-top:10px;">
+                            ${voteStatusHtml}
+                        </div>
+                        ${executeBtn}
+                    </div>
+                `;
+            });
+        }
+
+        container.innerHTML = html;
+    }
+
+    async function createRupsProposal() {
+        let compId = document.getElementById('rups-prop-comp').value;
+        let amount = parseFloat(document.getElementById('rups-prop-amount').value);
+
+        if (!compId) return alert("Pilih perusahaan!");
+        if (isNaN(amount) || amount <= 0) return alert("Masukkan nominal dividen yang valid!");
+
+        let comp = db.companies[compId];
+        if (comp.treasury < amount) return alert(`Kas perusahaan tidak mencukupi untuk membagikan dividen sebesar Rp ${amount.toLocaleString('id-ID')}! Kas saat ini: Rp ${comp.treasury.toLocaleString('id-ID')}`);
+
+        if (!db.rupsProposals) db.rupsProposals = [];
+        db.rupsProposals.push({
+            id: 'RUPS_' + Date.now(),
+            compId: compId,
+            compName: comp.name,
+            ceoName: db.currentUser.name,
+            totalDividend: amount,
+            status: 'Voting',
+            votesYes: 0,
+            votesNo: 0,
+            voters: {}
+        });
+
+        document.getElementById('rups-prop-amount').value = "";
+        await saveGame();
+        alert("Agenda RUPS berhasil diajukan! Para pemegang saham kini dapat melakukan voting.");
+        renderRUPS();
+    }
+
+    async function voteRups(index, support) {
+        let prop = db.rupsProposals[index];
+        if (!prop.voters) prop.voters = {};
+        if (prop.voters[db.currentUser.name]) return alert("Anda sudah memberikan suara pada RUPS ini!");
+
+        prop.voters[db.currentUser.name] = support;
+        if (support === 'Setuju') {
+            prop.votesYes = (prop.votesYes || 0) + 1;
+        } else {
+            prop.votesNo = (prop.votesNo || 0) + 1;
+        }
+
+        await saveGame();
+        alert(`Berhasil memberikan suara: ${support}`);
+        renderRUPS();
+    }
+
+    async function finalizeRups(index) {
+        let prop = db.rupsProposals[index];
+        let comp = db.companies[prop.compId];
+
+        if (comp.treasury < prop.totalDividend) {
+            prop.status = 'Dibatalkan (Kas Tidak Cukup)';
+            await saveGame();
+            return alert("Kas perusahaan tidak cukup untuk mengeksekusi dividen ini.");
+        }
+
+        if ((prop.votesYes || 0) >= (prop.votesNo || 0)) {
+            // RUPS Approved: Distribute dividends proportionally to all shareholders
+            comp.treasury -= prop.totalDividend;
+
+            // Calculate total distributed shares among users
+            let totalDistributedShares = comp.totalShares - comp.availableShares;
+            if (totalDistributedShares <= 0) totalDistributedShares = 1;
+
+            let dividendPerShare = prop.totalDividend / totalDistributedShares;
+
+            for (let uName in db.users) {
+                let userObj = db.users[uName];
+                if (userObj.portfolio && userObj.portfolio[prop.compId]) {
+                    let userShares = userObj.portfolio[prop.compId];
+                    let userDividend = Math.round(userShares * dividendPerShare);
+                    userObj.wallet += userDividend;
+                }
+            }
+
+            // Also CEO gets dividend if they hold shares
+            prop.status = 'Disetujui & Dibagikan';
+            fluctuationStockPriceOnActivity(comp, 1.10); // Boost stock price on dividend payout
+
+            alert(`🎉 RUPS Disetujui! Dividen sebesar Rp ${prop.totalDividend.toLocaleString('id-ID')} telah dibagikan ke dompet para pemegang saham.`);
+        } else {
+            prop.status = 'Ditolak Pemegang Saham';
+            alert("RUPS ditolak oleh mayoritas pemegang saham.");
+        }
+
+        await saveGame();
+        renderRUPS();
     }
 
     // BANK & LOANS TAB
